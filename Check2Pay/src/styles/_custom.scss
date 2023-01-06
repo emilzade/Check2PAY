@@ -1,0 +1,205 @@
+// Here you can add other styles
+* {
+  transition: 0s !important;
+}
+.tooltip,
+.bs-tooltip-auto {
+  transition: 0s !important;
+}
+$sizes: (
+  25: 25%,
+  50: 50%,
+  75: 75%,
+  100: 100%,
+);
+a {
+  text-decoration: none;
+  color: rgb(0, 0, 0);
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+.w-15 {
+  width: 15%;
+}
+.w-85 {
+  width: 85%;
+}
+.table-response-cell {
+  &::-webkit-scrollbar {
+    width: 0;
+  }
+}
+@each $breakpoint in map-keys($grid-breakpoints) {
+  @each $size, $length in $sizes {
+    @include media-breakpoint-up($breakpoint) {
+      .w-#{$breakpoint}-#{$size} {
+        width: $length !important;
+      }
+    }
+  }
+}
+.alert-custom {
+  z-index: 9999;
+  position: absolute;
+  top: 60px;
+  left: 20%;
+  right: 20%;
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.2s;
+}
+
+.modal-vue {
+  position: relative;
+}
+.modal-vue .overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.modal-vue .overlay-check,
+.modal-vue .overlay-settings,
+.modal-vue .overlay-history,
+.modal-vue .overlay-checkAll,
+.modal-vue .overlay-checkSelected {
+  z-index: 9998;
+}
+
+.modal-vue .check-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.modal-vue .modal-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-vue .settings-modal,
+.modal-vue .history-modal,
+.modal-vue .checkAll-modal,
+.modal-vue .checkSelected-modal {
+  position: fixed;
+  top: 10%;
+  left: 25%;
+  right: 25%;
+  bottom: 10%;
+  z-index: 9999;
+  margin: 0 auto;
+  background-color: #fff;
+  transition: 0.5s;
+}
+.modal-vue .check-modal {
+  position: fixed;
+  top: 45%;
+  left: 30%;
+  bottom: 45%;
+  right: 30%;
+  z-index: 9999;
+  margin: 0 auto;
+  background-color: #fff;
+  transition: 0.5s;
+}
+.modal-vue .checkAll-modal,
+.modal-vue .checkSelected-modal,
+.modal-vue .settings-modal {
+  overflow-y: auto;
+}
+.checkAll-modal-minimized {
+  position: fixed;
+  bottom: 0px;
+  right: 0px;
+  left: 90%;
+  top: 90%;
+  z-index: 9999;
+  background-color: #fff;
+  transition: 0.5s;
+  overflow: hidden;
+}
+.Check-All-Inner-ModalMaximized {
+  position: fixed;
+  top: 10%;
+  right: 25%;
+  left: 25%;
+  z-index: 100;
+}
+.Check-All-Inner-ModalMinimized {
+  position: fixed;
+  right: 0%;
+  bottom: 0;
+  top: 90%;
+  left: 90%;
+  z-index: 100;
+}
+.modal-vue .close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  cursor: pointer;
+}
+.loading-view {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.loading-view .loading-inner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.2s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.close-button-custom {
+  transition: 0.3s;
+}
+.close-button-custom:hover {
+  transform: scale(1.3);
+}
+.form-group-custom {
+  position: relative;
+  .form-label {
+    position: absolute;
+    top: 15px;
+    left: 30px;
+    transition: 0.3s;
+    color: gray;
+  }
+  .form-control:focus {
+    outline: 1px solid #6c757d;
+    box-shadow: none;
+  }
+  .form-control:focus + .form-label {
+    position: absolute;
+    top: -5px;
+    left: 30px;
+    color: black;
+  }
+}
