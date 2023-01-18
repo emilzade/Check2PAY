@@ -1,4 +1,7 @@
 <template>
+  <!--
+  stop scroll when manual scroll
+  -->
   <CRow class="w-50 m-auto">
     <CCol class="col-md-6 col-12 m-auto py-2">
       <CFormInput
@@ -19,55 +22,17 @@
       />
     </CCol>
   </CRow>
-  <CRow class="d-flex py-2 justify-content-end">
-    <Transition name="fade">
-      <CCol
-        role="button"
-        v-if="isSelectMultipleTableDataActive"
-        @click="checkSelected(selectedTableData)"
-        class="btn btn-primary col-lg-2 m-1 col-md-3 col-sm-4 col-5 d-flex align-items-center gap-2 justify-content-center"
-      >
-        <CIcon :content="cilMediaPlay" role="button" class="text-light"></CIcon>
-        <span>Check Selected</span>
-      </CCol>
-    </Transition>
-    <CCol
-      @click="isCheckAllConfirmModalActive = true"
-      class="btn btn-primary col-lg-2 m-1 col-md-3 col-sm-4 col-5 d-flex align-items-center gap-2 justify-content-center"
-    >
-      <CIcon :content="cilMediaPlay" role="button" class="text-light"></CIcon>
-      <span>Check All</span>
-    </CCol>
-    <CCol class="col-12 my-2 d-flex justify-content-between">
-      <div class="d-flex align-items-center">
-        <div class="form-check">
-          <CFormLabel
-            role="button"
-            class="form-check-label user-select-none"
-            for="isSelectMultipleTableDataActive"
-          >
-            Selectible
-            <input
-              class="form-check-input"
-              type="checkbox"
-              id="isSelectMultipleTableDataActive"
-              @click="selectMultipleDataClick"
-            />
-          </CFormLabel>
-        </div>
-      </div>
-      <JsonExcel
-        class="btn btn-outline-success"
-        v-c-tooltip="{
-          content: 'Download as excel',
-          placement: 'top',
-        }"
-        :data="dbData"
-      >
-        <CIcon :content="cilDataTransferDown"></CIcon>
-      </JsonExcel>
-    </CCol>
-  </CRow>
+
+  <CheckButtonsContainer
+    :icons="icons"
+    :isSelectMultipleTableDataActive="isSelectMultipleTableDataActive"
+    :dbData="dbData"
+    @setConfirmCheckAllModalActive="isCheckAllConfirmModalActive = true"
+    @selectMultipleDataClick="selectMultipleDataClick"
+    @selectAllDataClick="selectAllDataClick"
+    @checkSelected="checkSelected"
+  ></CheckButtonsContainer>
+
   <CTable responsive striped small hover>
     <CTableHead>
       <CTableRow>
@@ -117,7 +82,7 @@
                 content: 'Check this element',
                 placement: 'top',
               }"
-              :content="cilMediaPlay"
+              :content="icons.cilMediaPlay"
               @click="checkElement(item.gate_service_id)"
               role="button"
               class="text-success"
@@ -135,9 +100,9 @@
                   content: 'History of this element',
                   placement: 'top',
                 }"
-                :content="cilHistory"
+                :content="icons.cilHistory"
                 role="button"
-                class="text-warning"
+                class="text-warning d-block"
               ></CIcon>
             </router-link>
             <CIcon
@@ -145,7 +110,7 @@
                 content: 'Settings of this element',
                 placement: 'top',
               }"
-              :content="cilSettings"
+              :content="icons.cilSettings"
               @click="getParameterList(item.gate_service_id)"
               role="button"
               class="text-dark"
@@ -167,602 +132,105 @@
   </div>
   <!--pagination end-->
 
-  <!--Settings Modal Start -->
-  <div class="modal-vue">
-    <div class="settings-modal rounded p-3" v-if="isSettingsModalActive">
-      <div v-if="isParameterLoading" class="modal-loading bg-light rounded">
-        <div class="fingerprint-spinner">
-          <div class="spinner-ring"></div>
-          <div class="spinner-ring"></div>
-          <div class="spinner-ring"></div>
-          <div class="spinner-ring"></div>
-          <div class="spinner-ring"></div>
-          <div class="spinner-ring"></div>
-          <div class="spinner-ring"></div>
-          <div class="spinner-ring"></div>
-          <div class="spinner-ring"></div>
-        </div>
-      </div>
-      <div class="d-flex justify-content-end p-3">
-        <CIcon
-          :content="cilX"
-          @click="closeModal('settings')"
-          width="40"
-          class="border rounded close-button-custom"
-          role="button"
-          height="30"
-        />
-      </div>
-      <div class="p-5">
-        <p class="display-5 text-muted">Parameters</p>
-        <div class="my-3 fs-4">
-          <span>{{ parameterListOfElement.Id }}</span>
-          <span> - </span>
-          <span> {{ parameterListOfElement.Name }}</span>
-        </div>
-        <div
-          v-if="isParameterInputFocused == false"
-          :class="{
-            'text-success': parameterChangeData.isSuccess,
-            'text-danger': !parameterChangeData.isSuccess,
-          }"
-        >
-          {{ parameterChangeData.message }}
-        </div>
-        <CForm>
-          <CRow>
-            <!--parameterListOfElement-->
-            <CCol
-              v-for="parameterOfElement in parameterListOfElement.parameterList"
-              class="col-12 my-2 d-flex justify-content-between"
-              :key="parameterOfElement.Id"
-            >
-              <CFormLabel class="w-50 mx-2 text-secondary my-auto"
-                >Parameter namee
-                <CFormInput
-                  :value="parameterOfElement.name"
-                  @input="
-                    (event) => (parameterOfElement.name = event.target.value)
-                  "
-                  @focus="parameterInputFocused()"
-                />
-              </CFormLabel>
-              <CFormLabel class="w-50 mx-2 text-secondary my-auto"
-                >Parameter value
-                <CFormInput
-                  :value="parameterOfElement.value"
-                  @input="
-                    (event) => (parameterOfElement.value = event.target.value)
-                  "
-                  @focus="parameterInputFocused()"
-                />
-              </CFormLabel>
-              <div
-                class="btn btn-danger d-flex justify-content-center align-items-center mt-4"
-                @click="
-                  removeParameter(
-                    parameterListOfElement.Id,
-                    parameterOfElement.id,
-                  )
-                "
-              >
-                <CIcon class="text-light" :content="cilTrash"></CIcon>
-              </div>
-            </CCol>
-            <CCol class="col-12 d-flex justify-content-between">
-              <CFormInput
-                @click="isAddParameterActive = !isAddParameterActive"
-                value="Add"
-                type="button"
-                class="btn btn-outline-primary w-25"
-              />
-              <CFormInput
-                @click="editParametersOfElement(parameterListOfElement.Id)"
-                class="btn btn-outline-warning w-25"
-                value="Edit"
-                type="button"
-              />
-            </CCol>
-            <CCol
-              v-if="isAddParameterActive"
-              class="col-12 my-2 d-flex justify-content-between align-items-end"
-            >
-              <CFormLabel class="w-50 mx-2 text-secondary my-auto"
-                >Parameter name
-                <CFormInput
-                  v-model="newParameter.name"
-                  @focus="parameterInputFocused()"
-                />
-              </CFormLabel>
-              <CFormLabel class="w-50 mx-2 text-secondary my-auto"
-                >Parameter value
-                <CFormInput
-                  v-model="newParameter.value"
-                  @focus="parameterInputFocused()"
-                />
-              </CFormLabel>
-              <div
-                @click="addNewParameterToService(parameterListOfElement.Id)"
-                class="btn btn-outline-success d-flex align-items-center"
-              >
-                Submit
-              </div>
-            </CCol>
-          </CRow>
-        </CForm>
-      </div>
-    </div>
-    <div
-      class="overlay overlay-settings"
-      v-if="isSettingsModalActive"
-      @click="closeModal('settings')"
-    ></div>
-  </div>
-  <!--Settings Modal End -->
+  <SettingsModal
+    :isActive="isSettingsModalActive"
+    :isLoading="isParameterLoading"
+    :icons="icons"
+    :parameterListOfElement="parameterListOfElement"
+    :parameterChangeData="parameterChangeData"
+    :isInputFocused="isParameterInputFocused"
+    :isAddActive="isAddParameterActive"
+    @changeActiveState="changeModalActiveState"
+    @changeAddActiveState="
+      this.isAddParameterActive = !this.isAddParameterActive
+    "
+    @paramInputFocused="parameterInputFocused"
+    @removeParameterOfElement="removeParameter"
+    @editParameter="editParametersOfElement"
+    @addNewParameter="addNewParameterToService"
+  ></SettingsModal>
 
-  <!--Check Modal Start -->
-  <div class="modal-vue">
-    <div
-      class="check-modal rounded p-3 d-flex align-items-center justify-content-between"
-      v-if="isCheckModalActive"
-    >
-      <div class="">
-        <span class="text-secondary pe-2">{{
-          currentlyCheckingElement.gate_service_id
-        }}</span>
-        <span>{{ currentlyCheckingElement.name }}</span>
-      </div>
-      <div
-        style="transform: scale(2); height: 30px"
-        v-if="currentlyCheckingElement.isLoading"
-        class="check-loading"
-      >
-        <div class="semipolar-spinner pe-3">
-          <div class="ring"></div>
-          <div class="ring"></div>
-          <div class="ring"></div>
-          <div class="ring"></div>
-          <div class="ring"></div>
-        </div>
-      </div>
-      <div
-        v-if="currentlyCheckingElement.checkedElementStatus.success"
-        class="element-checked-success"
-      >
-        <div class="check-wrapper-success">
-          <svg
-            class="checkmark-success"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 52 52"
-          >
-            <circle
-              class="checkmark__circle-success"
-              cx="26"
-              cy="26"
-              r="25"
-              fill="none"
-            />
-            <path
-              class="checkmark__check-success"
-              fill="none"
-              d="M14.1 27.2l7.1 7.2 16.7-16.8"
-            />
-          </svg>
-        </div>
-      </div>
-      <div
-        v-if="currentlyCheckingElement.checkedElementStatus.error"
-        class="element-checked-error"
-      >
-        <svg
-          version="1.1"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 130.2 130.2"
-        >
-          <circle
-            class="path circle"
-            fill="none"
-            stroke="#D06079"
-            stroke-width="6"
-            stroke-miterlimit="10"
-            cx="65.1"
-            cy="65.1"
-            r="62.1"
-          />
-          <line
-            class="path line"
-            fill="none"
-            stroke="#D06079"
-            stroke-width="6"
-            stroke-linecap="round"
-            stroke-miterlimit="10"
-            x1="34.4"
-            y1="37.9"
-            x2="95.8"
-            y2="92.3"
-          />
-          <line
-            class="path line"
-            fill="none"
-            stroke="#D06079"
-            stroke-width="6"
-            stroke-linecap="round"
-            stroke-miterlimit="10"
-            x1="95.8"
-            y1="38"
-            x2="34.4"
-            y2="92.2"
-          />
-        </svg>
-      </div>
-    </div>
-    <div
-      class="overlay overlay-check"
-      v-if="isCheckModalActive"
-      @click="closeModal('check')"
-    ></div>
-  </div>
-  <!--Check Modal End -->
+  <CheckModal
+    :isActive="isCheckModalActive"
+    :currentElement="currentlyCheckingElement"
+    @changeActiveState="changeModalActiveState"
+  ></CheckModal>
 
-  <!--Check All Confirm Modal Start-->
-  <div class="modal-vue">
-    <div
-      class="check-modal rounded p-3 d-flex flex-column justify-content-around align-items-center"
-      v-if="isCheckAllConfirmModalActive"
-    >
-      <div class="fs-4 text-center">Confirm Check All Items In Database</div>
-      <div class="d-flex justify-content-around align-items-center w-100 pt-1">
-        <div
-          @click="isCheckAllConfirmModalActive = false"
-          class="btn btn-outline-danger btn-lg"
-        >
-          Close
-        </div>
-        <div @click="checkAll()" class="btn btn-outline-success btn-lg">
-          Check All
-        </div>
-      </div>
-    </div>
-    <div
-      class="overlay overlay-check"
-      v-if="isCheckAllConfirmModalActive"
-      @click="isCheckAllConfirmModalActive = false"
-    ></div>
-  </div>
-  <!--Check All Confirm Modal End-->
+  <CheckResultModal
+    :isActive="isCheckResultActive"
+    :data="currentlyCheckingElement.data"
+    @changeActiveState="changeModalActiveState"
+  ></CheckResultModal>
 
-  <!--Check Selected Modal Start-->
-  <div class="modal-vue">
-    <div
-      ref="container"
-      class="rounded checkSelected-modal p-3"
-      v-if="isCheckSelectedModalActive"
-    >
-      <div
-        class="Check-All-Inner-ModalMaximized justify-content-end d-flex overflow-hidden gap-4 p-1 bg-light border rounded align-items-center"
-      >
-        <div @click="isCheckSelectedLoadingStopped = true">
-          <div
-            class="btn btn-danger text-light"
-            v-if="!isCheckSelectedLoadingStopped"
-          >
-            Stop Loading
-          </div>
-          <div class="btn btn-secondary disabled" v-else>Stopped</div>
-        </div>
-        <CIcon
-          :content="cilX"
-          @click="closeModal('checkSelected')"
-          width="40"
-          class="border rounded"
-          role="button"
-          height="30"
-        />
-      </div>
-      <div class="m-5 p-5">
-        <div
-          v-for="item in selectedTableData"
-          :key="item.id"
-          class="border rounded my-2 ps-3 d-flex justify-content-between align-items-center position-relative"
-        >
-          <div class="px-2 text-secondary small">
-            {{ item.gate_service_id }}
-          </div>
-          <div class="w-85 small">{{ item.name }}</div>
-          <div v-if="item.isLoading" class="w-15">
-            <div class="check-loading border rounded p-0 m-0">
-              <div class="fingerprint-spinner w-75 p-0 m-0">
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-              </div>
-            </div>
-          </div>
-          <div
-            @click="showCheckInfo(item.id, 'checkSelected')"
-            v-if="item.checkedElementStatus.success"
-            class="element-checked-success w-15 h-100"
-          >
-            <div
-              class="bg-success text-light rounded h-100 d-flex justify-content-center align-items-center cursor-pointer"
-            >
-              Success
-            </div>
-            <!-- <div class="check-wrapper-success">
-              <svg
-                class="checkmark-success"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 52 52"
-              >
-                <circle
-                  class="checkmark__circle-success"
-                  cx="26"
-                  cy="26"
-                  r="25"
-                  fill="none"
-                />
-                <path
-                  class="checkmark__check-success"
-                  fill="none"
-                  d="M14.1 27.2l7.1 7.2 16.7-16.8"
-                />
-              </svg>
-            </div> -->
-          </div>
-          <div
-            @click="showCheckInfo(item.id, 'checkSelected')"
-            v-if="item.checkedElementStatus.error"
-            class="element-checked-error w-15"
-          >
-            <div
-              class="bg-danger text-light rounded h-100 d-flex justify-content-center align-items-center cursor-pointer"
-            >
-              Error
-            </div>
-            <!-- <svg
-              version="1.1"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 130.2 130.2"
-            >
-              <circle
-                class="path circle"
-                fill="none"
-                stroke="#D06079"
-                stroke-width="6"
-                stroke-miterlimit="10"
-                cx="65.1"
-                cy="65.1"
-                r="62.1"
-              />
-              <line
-                class="path line"
-                fill="none"
-                stroke="#D06079"
-                stroke-width="6"
-                stroke-linecap="round"
-                stroke-miterlimit="10"
-                x1="34.4"
-                y1="37.9"
-                x2="95.8"
-                y2="92.3"
-              />
-              <line
-                class="path line"
-                fill="none"
-                stroke="#D06079"
-                stroke-width="6"
-                stroke-linecap="round"
-                stroke-miterlimit="10"
-                x1="95.8"
-                y1="38"
-                x2="34.4"
-                y2="92.2"
-              />
-            </svg> -->
-          </div>
-          <CheckInfoModal
-            v-if="item.isShowInfoActive"
-            :item="item.checkData"
-          ></CheckInfoModal>
-        </div>
-      </div>
-    </div>
-    <div
-      :class="{
-        'overlay overlay-checkSelected': !isCheckAllModalMinimized,
-      }"
-      v-if="isCheckSelectedModalActive"
-      @click="closeModal('checkSelected')"
-    ></div>
-  </div>
-  <!--Check Selected Modal End-->
+  <CheckAllConfirmModal
+    :isActive="isCheckAllConfirmModalActive"
+    @changeActiveState="changeModalActiveState"
+    @checkAll="checkAll"
+  ></CheckAllConfirmModal>
 
-  <!--Check All Modal Start-->
-  <div class="modal-vue">
-    <div
-      @scroll="handleScroll"
-      ref="container"
-      :class="{
-        'checkAll-modal p-3': !isCheckAllModalMinimized,
-        'checkAll-modal-minimized border shadow': isCheckAllModalMinimized,
-      }"
-      class="rounded"
-      v-if="isCheckAllModalActive"
-    >
-      <div
-        :class="{
-          'Check-All-Inner-ModalMaximized  justify-content-end':
-            !isCheckAllModalMinimized,
-          'Check-All-Inner-ModalMinimized justify-content-start':
-            isCheckAllModalMinimized,
-        }"
-        class="d-flex overflow-hidden gap-4 p-1 bg-light border rounded align-items-center"
-      >
-        <div
-          v-if="!isCheckAllModalMinimized"
-          @click="isCheckAllLoadingStopped = true"
-        >
-          <div
-            class="btn btn-danger text-light"
-            v-if="!isCheckAllLoadingStopped"
-          >
-            Stop Loading
-          </div>
-          <div class="btn btn-secondary disabled" v-else>Stopped</div>
-        </div>
-        <CIcon
-          v-if="!isCheckAllModalMinimized"
-          :content="cilWindowMinimize"
-          @click="minimizeCheckAllModal"
-          width="40"
-          class="border rounded"
-          height="30"
-          role="button"
-        />
-        <CIcon
-          v-if="isCheckAllModalMinimized"
-          :content="cilWindowMaximize"
-          @click="maximizeCheckAllModal"
-          width="40"
-          class="border rounded"
-          role="button"
-          height="30"
-        />
-        <CIcon
-          :content="cilX"
-          @click="closeModal('checkAll')"
-          width="40"
-          class="border rounded"
-          role="button"
-          height="30"
-        />
-      </div>
-      <div class="m-5 p-5">
-        <div
-          v-for="item in checkAllData"
-          :key="item.id"
-          class="border rounded my-2 ps-3 d-flex justify-content-between align-items-center position-relative"
-        >
-          <div class="px-2 text-secondary small">{{ item.serviceid }}</div>
-          <div class="w-85 small">{{ item.name }}</div>
-          <div v-if="item.isLoading" class="w-15">
-            <div class="check-loading border rounded">
-              <div class="fingerprint-spinner w-75">
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring"></div>
-              </div>
-            </div>
-          </div>
-          <div
-            @click="showCheckInfo(item.id, 'checkAll')"
-            v-if="item.checkedElementStatus.success"
-            class="element-checked-success w-15 h-100"
-          >
-            <div
-              class="bg-success text-light rounded h-100 d-flex justify-content-center align-items-center cursor-pointer"
-            >
-              Success
-            </div>
-            <!-- <div class="check-wrapper-success">
-              <svg
-                class="checkmark-success"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 52 52"
-              >
-                <circle
-                  class="checkmark__circle-success"
-                  cx="26"
-                  cy="26"
-                  r="25"
-                  fill="none"
-                />
-                <path
-                  class="checkmark__check-success"
-                  fill="none"
-                  d="M14.1 27.2l7.1 7.2 16.7-16.8"
-                />
-              </svg>
-            </div> -->
-          </div>
-          <div
-            @click="showCheckInfo(item.id, 'checkAll')"
-            v-if="item.checkedElementStatus.error"
-            class="element-checked-error w-15"
-          >
-            <div
-              class="bg-danger text-light rounded h-100 d-flex justify-content-center align-items-center cursor-pointer"
-            >
-              Error
-            </div>
-            <!-- <svg
-              version="1.1"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 130.2 130.2"
-            >
-              <circle
-                class="path circle"
-                fill="none"
-                stroke="#D06079"
-                stroke-width="6"
-                stroke-miterlimit="10"
-                cx="65.1"
-                cy="65.1"
-                r="62.1"
-              />
-              <line
-                class="path line"
-                fill="none"
-                stroke="#D06079"
-                stroke-width="6"
-                stroke-linecap="round"
-                stroke-miterlimit="10"
-                x1="34.4"
-                y1="37.9"
-                x2="95.8"
-                y2="92.3"
-              />
-              <line
-                class="path line"
-                fill="none"
-                stroke="#D06079"
-                stroke-width="6"
-                stroke-linecap="round"
-                stroke-miterlimit="10"
-                x1="95.8"
-                y1="38"
-                x2="34.4"
-                y2="92.2"
-              />
-            </svg> -->
-          </div>
-          <CheckInfoModal
-            v-if="item.isShowInfoActive"
-            :item="item"
-          ></CheckInfoModal>
-        </div>
-      </div>
-    </div>
-    <div
-      :class="{
-        'overlay overlay-checkAll': !isCheckAllModalMinimized,
-      }"
-      v-if="isCheckAllModalActive"
-      @click="closeModal('checkAll')"
-    ></div>
-  </div>
-  <!--Check All Modal End-->
+  <CheckSelectedModal
+    :checkData="selectedTableData"
+    :isActive="isCheckSelectedModalActive"
+    :icons="icons"
+    @changeActiveState="changeModalActiveState"
+    @getCheckInfo="showCheckInfo"
+    @closeCheckInfoModal="closeModal"
+  ></CheckSelectedModal>
+
+  <CheckAllModal
+    v-if="isCheckAllModalActive"
+    ref="CheckAllModal"
+    :checkData="checkAllData"
+    :isActive="isCheckAllModalActive"
+    :isMinimized="isCheckAllModalMinimized"
+    :isStopped="isCheckAllLoadingStopped"
+    :icons="icons"
+    @changeActiveState="changeModalActiveState"
+    @maximizeModal="maximizeCheckAllModal"
+    @minimizeModal="minimizeCheckAllModal"
+    @stopCheckAll="this.isCheckAllLoadingStopped = true"
+    @getCheckInfo="showCheckInfo"
+    @closeCheckInfoModal="closeModal"
+  ></CheckAllModal>
 </template>
-
+<style>
+.check-MultipleInfoActive {
+  position: fixed;
+  top: 15%;
+  left: 25%;
+  right: 25%;
+  bottom: 10%;
+  z-index: 9999;
+  animation-name: boxEnter;
+  animation-duration: 0.5s;
+}
+.check-MultipleInfoHidden {
+  position: fixed;
+  top: 10%;
+  left: 125%;
+  right: 25%;
+  bottom: 10%;
+  opacity: 0;
+  animation-name: boxLeave;
+  animation-duration: 0.5s;
+}
+@keyframes boxEnter {
+  0% {
+    left: 125%;
+  }
+  100% {
+    left: 25%;
+  }
+}
+@keyframes boxLeave {
+  0% {
+    left: 25%;
+  }
+  100% {
+    left: 125%;
+  }
+}
+</style>
 <script>
 import { ref, isProxy, toRaw } from 'vue'
 import {
@@ -771,18 +239,32 @@ import {
   cilHistory,
   cilTrash,
   cilX,
+  cilInfo,
   cilWindowMinimize,
   cilWindowMaximize,
   cilDataTransferDown,
+  cilArrowLeft,
+  cilApplications,
 } from '@coreui/icons'
-import JsonExcel from 'vue-json-excel3'
+
 import Pagination from 'v-pagination-3'
-import CheckInfoModal from '@/components/CheckInfoModal.vue'
+import CheckButtonsContainer from '@/components/CheckButtonsContainer.vue'
+import CheckAllConfirmModal from '@/components/CheckAllConfirmModal.vue'
+import CheckAllModal from '@/components/CheckAllModal.vue'
+import CheckSelectedModal from '@/components/CheckSelectedModal.vue'
+import CheckResultModal from '@/components/CheckResultModal.vue'
+import CheckModal from '@/components/CheckModal.vue'
+import SettingsModal from '@/components/SettingsModal.vue'
 export default {
   components: {
-    JsonExcel,
     Pagination,
-    CheckInfoModal,
+    CheckButtonsContainer,
+    CheckAllConfirmModal,
+    CheckAllModal,
+    CheckSelectedModal,
+    CheckResultModal,
+    CheckModal,
+    SettingsModal,
   },
   name: 'Index',
   setup() {},
@@ -805,63 +287,56 @@ export default {
       isSuccess: false,
       data: null,
     }
-
     const currentlyCheckingElement = {
       name: null,
+      data: null,
       checkedElementStatus: {
         success: false,
         error: false,
       },
-    }
-    const newParameter = {
-      id: 1,
-      active: true,
-      serviceid: null,
-      name: null,
-      value: null,
     }
     const totalElementCount = 0
     const perPageElementCount = 20
     const currentPage = 1
     const currentSort = 'id'
     const currentSortDir = 'asc'
-    const limitPosition = 20
-    const isScrolled = false
-    const lastPosition = 0
 
     const isCheckModalActive = ref(false)
+    const isCheckResultActive = ref(false)
     const isSettingsModalActive = ref(false)
     const isCheckAllModalActive = ref(false)
     const isCheckInfoModalActive = ref(false)
     const isCheckAllConfirmModalActive = ref(false)
     const isCheckAllLoadingStopped = ref(false)
-    const isCheckSelectedLoadingStopped = ref(false)
     const isModalLoading = ref(false)
     const isParameterLoading = ref(false)
     const isParameterInputFocused = ref(false)
     const isAddParameterActive = false
-    const isElementChecking = ref(false)
     const isCheckAllModalMinimized = ref(false)
     const isCheckSelectedModalActive = ref(false)
 
     const isSelectMultipleTableDataActive = ref(false)
-
-    return {
-      currentSort,
-      currentSortDir,
+    const icons = {
       cilSettings,
       cilMediaPlay,
       cilHistory,
       cilTrash,
       cilX,
+      cilInfo,
       cilWindowMinimize,
       cilWindowMaximize,
       cilDataTransferDown,
+      cilArrowLeft,
+      cilApplications,
+    }
+    return {
+      icons,
+      currentSort,
+      currentSortDir,
 
       thData,
       dbData,
       checkAllData,
-      newParameter,
       filterForm,
       parameterListOfElement,
       parameterChangeData,
@@ -871,13 +346,10 @@ export default {
       currentPage,
       perPageElementCount,
       totalElementCount,
-      limitPosition,
-      isScrolled,
-      lastPosition,
 
       isCheckModalActive,
+      isCheckResultActive,
       isCheckAllLoadingStopped,
-      isCheckSelectedLoadingStopped,
       isSettingsModalActive,
       isCheckAllModalActive,
       isCheckAllConfirmModalActive,
@@ -887,7 +359,6 @@ export default {
       isModalLoading,
       isParameterLoading,
       isParameterInputFocused,
-      isElementChecking,
       isSelectMultipleTableDataActive,
       isAddParameterActive,
     }
@@ -912,6 +383,69 @@ export default {
       selectedTableData.length === 0,
   },
   methods: {
+    changeModalActiveState: function (modalName) {
+      switch (modalName) {
+        case 'check':
+          this.currentlyCheckingElement.checkedElementStatus.success = false
+          this.currentlyCheckingElement.checkedElementStatus.error = false
+          for (let i = 0; i < this.dbData.length; i++) {
+            this.dbData[i].checkedElementStatus.success = false
+            this.dbData[i].checkedElementStatus.error = false
+          }
+          this.isCheckModalActive = false
+          this.isCheckAllModalActive = false
+          break
+        case 'checkAllConfirm':
+          this.isCheckAllConfirmModalActive = false
+          break
+        case 'checkAll':
+          this.isCheckAllLoadingStopped = true
+          for (let i = 0; i < this.dbData.length; i++) {
+            this.dbData[i].checkedElementStatus.success = false
+            this.dbData[i].checkedElementStatus.error = false
+          }
+          this.checkAllData = []
+          this.isCheckAllModalActive = false
+          break
+        case 'checkSelected':
+          this.isCheckAllLoadingStopped = true
+          for (let i = 0; i < this.selectedTableData.length; i++) {
+            this.selectedTableData[i].checkedElementStatus.success = false
+            this.selectedTableData[i].checkedElementStatus.error = false
+            this.selectedTableData[i].isShowInfoActive = false
+          }
+          this.isCheckSelectedModalActive = false
+          break
+        case 'checkInfoCheckAll':
+          for (var i = 0; i < this.checkAllData.length; i++) {
+            this.checkAllData[i].isShowInfoActive = false
+          }
+          break
+        case 'checkInfoCheckSelected':
+          for (var i = 0; i < this.selectedTableData.length; i++) {
+            this.selectedTableData[i].isShowInfoActive = false
+          }
+          break
+        case 'settings':
+          this.isSettingsModalActive = false
+          this.isAddParameterActive = false
+          this.parameterChangeData = {
+            isSuccess: false,
+            message: null,
+          }
+          break
+        case 'checkResult':
+          this.currentlyCheckingElement.checkedElementStatus.success = false
+          this.currentlyCheckingElement.checkedElementStatus.error = false
+          for (let i = 0; i < this.dbData.length; i++) {
+            this.dbData[i].checkedElementStatus.success = false
+            this.dbData[i].checkedElementStatus.error = false
+          }
+          this.isCheckResultActive = false
+          this.currentlyCheckingElement.data = null
+          break
+      }
+    },
     checkElement: async function (gate_service_id) {
       this.isCheckModalActive = true
       this.currentlyCheckingElement = this.dbData.filter(
@@ -930,7 +464,9 @@ export default {
         },
       )
         .then(async (response) => await response.json())
-        .then(async (data) => await this.checkAsync(data))
+        .then(async (data) => {
+          await this.checkAsync(data)
+        })
     },
     checkAsync: async function (data) {
       console.log(data)
@@ -939,6 +475,9 @@ export default {
       } else {
         this.currentlyCheckingElement.checkedElementStatus.error = true
       }
+      this.currentlyCheckingElement.data = data[0]
+      this.isCheckModalActive = false
+      this.isCheckResultActive = true
       this.currentlyCheckingElement.isLoading = false
     },
     checkAll: async function () {
@@ -978,13 +517,14 @@ export default {
               } else {
                 this.checkAllData[i].checkedElementStatus.error = true
               }
+              this.$refs.CheckAllModal.handleScroll()
             } catch {
               this.isCheckAllLoadingStopped = true
               console.log(
                 'Something went wrong with request , please check again...',
               )
             }
-            console.log(newData.id, this.isScrolled)
+            //console.log(newData.id, this.isScrolled)
           })
         if (!this.isCheckAllModalActive) {
           break
@@ -992,10 +532,7 @@ export default {
         if (this.isCheckAllLoadingStopped) {
           break
         }
-        console.log(this.$refs.container.scrollY)
-        if (this.isScrolled == false) {
-          this.$refs.container.scrollTop = this.$refs.container.scrollHeight
-        }
+        //console.log(this.$refs.container.scrollY)
       }
     },
     checkSelected: async function () {
@@ -1003,7 +540,6 @@ export default {
         alert('Please select at least 2 element...')
       } else {
         this.isCheckSelectedModalActive = true
-        this.isCheckSelectedLoadingStopped = false
         for (let i = 0; i < this.selectedTableData.length; i++) {
           this.selectedTableData[i].isLoading = true
         }
@@ -1036,16 +572,12 @@ export default {
                   this.selectedTableData[i].checkedElementStatus.error = true
                 }
               } catch {
-                this.isCheckSelectedLoadingStopped = true
                 console.log(
                   'Something went wrong with request , please check again...',
                 )
               }
             })
           if (!this.isCheckSelectedModalActive) {
-            break
-          }
-          if (this.isCheckSelectedLoadingStopped) {
             break
           }
           console.log(this.selectedTableData[i])
@@ -1077,6 +609,7 @@ export default {
     },
     minimizeCheckAllModal: function () {
       this.isCheckAllModalMinimized = true
+      console.log('salam')
     },
     maximizeCheckAllModal: function () {
       this.isCheckAllModalMinimized = false
@@ -1131,11 +664,11 @@ export default {
 
       this.setNewParameterNull()
     },
-    addNewParameterToService: function (id) {
+    addNewParameterToService: function (id, newParameter) {
       this.isParameterInputFocused = false
-      this.newParameter.serviceid = id
-      if (isProxy(this.newParameter)) {
-        var reqObject = toRaw(this.newParameter)
+      newParameter.serviceid = id
+      if (isProxy(newParameter)) {
+        var reqObject = toRaw(newParameter)
       }
       const configObject = {
         method: 'POST',
@@ -1216,6 +749,11 @@ export default {
           }
           this.isCheckSelectedModalActive = false
           break
+        case 'checkInfoCheckSelected':
+          for (var i = 0; i < this.selectedTableData.length; i++) {
+            this.selectedTableData[i].isShowInfoActive = false
+          }
+          break
         case 'settings':
           this.isSettingsModalActive = false
           this.isAddParameterActive = false
@@ -1223,6 +761,21 @@ export default {
             isSuccess: false,
             message: null,
           }
+          break
+        case 'checkInfoCheckAll':
+          for (var i = 0; i < this.checkAllData.length; i++) {
+            this.checkAllData[i].isShowInfoActive = false
+          }
+          break
+        case 'checkResult':
+          this.currentlyCheckingElement.checkedElementStatus.success = false
+          this.currentlyCheckingElement.checkedElementStatus.error = false
+          for (let i = 0; i < this.dbData.length; i++) {
+            this.dbData[i].checkedElementStatus.success = false
+            this.dbData[i].checkedElementStatus.error = false
+          }
+          this.isCheckResultActive = false
+          this.currentlyCheckingElement.data = null
           break
       }
     },
@@ -1289,6 +842,15 @@ export default {
         this.selectedTableData = []
       }
     },
+    selectAllDataClick: function () {
+      if (this.isSelectMultipleTableDataActive == false) {
+        this.isSelectMultipleTableDataActive = true
+        this.selectedTableData = this.dbData
+      } else {
+        this.isSelectMultipleTableDataActive = false
+        this.selectedTableData = []
+      }
+    },
     sort: function (sortDir) {
       //if sortDir == current sort, reverse
       if (sortDir === this.currentSort) {
@@ -1302,19 +864,21 @@ export default {
     },
     handleScroll() {
       if (
-        this.lastPosition < this.$refs.container.scrollY &&
-        this.limitPosition < this.$refs.container.scrollY
+        this.lastPosition < this.$refs.salam.scrollY &&
+        this.limitPosition < this.$refs.salam.scrollY
       ) {
         this.isScrolled = true
+        console.log('scrolled true')
         // move up!
       }
 
-      if (this.lastPosition > this.$refs.container.scrollY) {
+      if (this.lastPosition > this.$refs.salam.top.scrollY) {
         this.isScrolled = false
+        console.log('scrolled false')
         // move down
       }
 
-      this.lastPosition = this.$refs.container.scrollY
+      //this.lastPosition = this.$refs.salam.scrollY
       // this.scrolled = window.scrollY > 250;
     },
     createNewModelArray: function () {
@@ -1342,5 +906,6 @@ export default {
         console.log(this.dbData)
       })
   },
+  mounted() {},
 }
 </script>
