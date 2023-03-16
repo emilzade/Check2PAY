@@ -1,6 +1,6 @@
 <template>
   <!--check history multiple input array-->
-  <CRow class="w-75 m-auto">
+  <CRow class="w-75 m-auto d-flex align-items-center">
     <CCol class="col-md-4 col-12 m-auto py-2 position-relative">
       <CFormInput
         v-model="filterForm.GateServiceId"
@@ -8,10 +8,9 @@
         type="text"
         placeholder="Filter by Gate Service Id"
         class="w-100 h-100"
-        @keyup="filterElementsByGateServiceId"
+        @keyup="filterElements"
         :class="{
           'border border-danger': !this.isServiceNameValid,
-          'border border-success': this.isServiceNameValid,
         }"
       />
       <p
@@ -43,6 +42,7 @@
         track-by="name"
         :placeholder="'Select Group'"
         @select="filterSelectedGroup"
+        @remove="filterRemovedGroup"
       />
     </CCol>
   </CRow>
@@ -51,6 +51,7 @@
     :icons="icons"
     :dbData="dbData"
     :isSelectedAll="isSelectedAll"
+    :isSelectedTableDataEmpty="isSelectedTableDataEmpty"
     @setConfirmCheckAllModalActive="isCheckAllConfirmModalActive = true"
     @clearSelectedMultipleData="clearSelectedMultipleData"
     @selectAllDataClick="selectAllDataClick"
@@ -74,7 +75,22 @@
     </CTableHead>
     <CTableBody>
       <CTableRow align="middle" v-for="item in filteredElements" :key="item.id">
-        <CTableDataCell class="w-15">
+        <CTableDataCell class="w-15 position-relative">
+          <img
+            v-if="item.topservicesid == 1"
+            :src="Number1"
+            style="width: 20px; position: absolute; top: -10px"
+          />
+          <img
+            v-if="item.topservicesid == 2"
+            :src="Number2"
+            style="width: 20px; position: absolute; top: -10px"
+          />
+          <img
+            v-if="item.topservicesid == 3"
+            :src="Number3"
+            style="width: 20px; position: absolute; top: -10px"
+          />
           <label class="form-check-label py-3">
             <input
               type="checkbox"
@@ -193,7 +209,7 @@
   <CheckAllConfirmModal
     :isActive="isCheckAllConfirmModalActive"
     @changeActiveState="changeModalActiveState"
-    @checkAll="checkAll(this.dbData)"
+    @checkAll="GetCheckAllDataAndCheck"
   ></CheckAllConfirmModal>
 
   <CheckSelectedModal
@@ -279,6 +295,7 @@ import {
   cilWindowMaximize,
   cilDataTransferDown,
   cilArrowLeft,
+  cilArrowBottom,
   cilApplications,
 } from '@coreui/icons'
 
@@ -293,7 +310,9 @@ import SettingsModal from '@/components/SettingsModal.vue'
 import LoaderFullPage from '@/components/LoaderFullPage.vue'
 import 'vue-multiselect/dist/vue-multiselect.css'
 import VueMultiselect from 'vue-multiselect'
-
+import Number1 from '@/assets/images/number-1.png'
+import Number2 from '@/assets/images/number-2.png'
+import Number3 from '@/assets/images/number-3.png'
 export default {
   components: {
     Pagination,
@@ -318,20 +337,8 @@ export default {
       { id: 4, title: 'Operations', sortBy: null },
     ]
     const dbData = []
-    const dbGroups = [
-      {
-        id: 1,
-        name: 'Araz',
-      },
-      {
-        id: 2,
-        name: 'Kapital',
-      },
-      {
-        id: 3,
-        name: 'Bravo',
-      },
-    ]
+    const dbGroups = []
+    const nestedDbGroups = { servicegroupid: 0, name: 'root', children: [] }
     const checkAllData = []
     const selectedTableData = []
     const selectedGroup = ref()
@@ -339,6 +346,7 @@ export default {
       Name: '',
       GateServiceId: '',
     })
+    const filteredIdArr = []
     const parameterListOfElement = []
     const parameterChangeData = {
       isSuccess: false,
@@ -394,11 +402,16 @@ export default {
       cilWindowMaximize,
       cilDataTransferDown,
       cilArrowLeft,
+      cilArrowBottom,
       cilApplications,
     }
 
     return {
+      Number1,
+      Number2,
+      Number3,
       dbGroups,
+      nestedDbGroups,
       icons,
       currentSort,
       currentSortDir,
@@ -407,6 +420,7 @@ export default {
       dbData,
       checkAllData,
       filterForm,
+      filteredIdArr,
       parameterListOfElement,
       parameterChangeData,
       selectedTableData,
@@ -461,6 +475,11 @@ export default {
       selectedTableData.length === 0,
   },
   methods: {
+    GetCheckAllDataAndCheck: function () {
+      fetch('http://localhost:8081/api/Services/GetAllSimplifiedServices')
+        .then((response) => response.json())
+        .then((data) => this.checkAll(data))
+    },
     checkElement: async function (gate_service_id) {
       this.isCheckModalActive = true
       this.currentlyCheckingElement = this.dbData.filter(
@@ -536,6 +555,12 @@ export default {
 
       for (let i = 0; i < payload.length; i++) {
         console.log(payload[i].gate_service_id + ' ' + payload[i].name)
+        var tempData = {
+          serviceid: payload[i].gate_service_id,
+          name: payload[i].name,
+          isLoading: true,
+        }
+        this.checkAllData.push(tempData)
         await fetch(
           `http://localhost:8081/api/checkRequest/singlecheck?PRV_ID=${payload[i].gate_service_id}`,
           {
@@ -548,16 +573,20 @@ export default {
           .then(async (response) => await response.json())
           .then((data) => {
             //try {
-            var newData = {
+            var index = payload.findIndex(
+              (x) => x.gate_service_id == payload[i].gate_service_id,
+            )
+            this.checkAllData[index] = {
               ...data,
-              name: payload[i].name,
+              ...tempData,
               isShowInfoActive: false,
+              isLoading: false,
               checkedElementStatus: {
                 success: data.resultcodeid == 0 ? true : false,
                 error: data.resultcodeid != 0 ? true : false,
               },
             }
-            this.checkAllData.push(newData)
+            console.log(this.checkAllData[index])
             if (this.checkAllData.length > 10) {
               console.log(this.$refs.CheckAllModal.getScrollTop())
             }
@@ -584,7 +613,6 @@ export default {
         //console.log(this.$refs.container.scrollY)
       }
     },
-
     // checkAll: async function () {
     //   this.isCheckAllModalActive = true
     //   this.isCheckAllModalMinimized = false
@@ -704,11 +732,11 @@ export default {
       }
     },
     checkTopServices: function (limit) {
-      fetch(`http://localhost:8081/api/services/GetTopServices?limit=${limit}`)
+      fetch(
+        `http://localhost:8081/api/Services/GetServices?offset=0&limit=${limit}`,
+      )
         .then((response) => response.json())
-        .then((data) => {
-          this.checkAll(this.createNewModelArray(data))
-        })
+        .then((data) => this.checkAll(this.createNewModelArray(data.services)))
     },
     showCheckInfo: function (id, modalName) {
       console.log(id)
@@ -918,12 +946,12 @@ export default {
         )
       }
     },
-    filterElementsByGateServiceId: function () {
+    filterElements: function () {
       var string = this.filterForm.GateServiceId.split('')
       var asd = this.removeSpaces(string)
       var stringWithoutSpace = string.join('').substring(0, asd)
-      var strArr = stringWithoutSpace.split(',')
-      strArr = strArr.filter((v) => v != '')
+      this.filteredIdArr = stringWithoutSpace.split(',')
+      this.filteredIdArr = this.filteredIdArr.filter((v) => v != '')
       //console.log(strArr)
       //strArr = strArr.map(this.toNumber)
 
@@ -931,41 +959,16 @@ export default {
       //   strArr.some((x) => value.gate_service_id.toString().includes(x)),
       // )
 
-      if (this.filterForm.GateServiceId == '') {
-        console.log(
-          'http://localhost:8081/api/Services/GetServices?offset=0&limit=10',
-        )
-        fetch(
-          'http://localhost:8081/api/Services/GetServices?offset=0&limit=10',
-          store.dispatch('fetchGetObject'),
-        )
-          .then((response) => response.json())
-          .then((data) => {
-            this.dbData = data.services
-            this.totalElementCount = data.totalCount
-            this.dbData = this.createNewModelArray(data.services)
-            console.log(data)
-            this.isPageLoading = false
-          })
-      } else {
-        console.log(
-          `http://localhost:8081/api/services/FilterServiceById?ids=${strArr.join(
-            '&ids=',
-          )}`,
-        )
-        fetch(
-          `http://localhost:8081/api/services/FilterServiceById?ids=${strArr.join(
-            '&ids=',
-          )}`,
-        )
-          .then((response) => response.json())
-          .then((data) => {
-            this.dbData = data.services
-            this.totalElementCount = data.totalCount
-            this.dbData = this.createNewModelArray(data.services)
-            console.log(data)
-          })
-      }
+      console.log(this.checkFilter())
+      fetch(this.checkFilter(), store.dispatch('fetchGetObject'))
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data)
+          this.dbData = data.services
+          this.totalElementCount = data.totalCount
+          this.dbData = this.createNewModelArray(data.services)
+          this.isPageLoading = false
+        })
       // if (this.filterForm.GateServiceId == '') {
       //   return dbData
       // } else {
@@ -986,18 +989,50 @@ export default {
         n.name.toLowerCase().includes(this.filterForm.Name.toLowerCase()),
       )
     },
+    checkFilter(offset) {
+      if (typeof offset == 'undefined') offset = 0
+      if (
+        this.filterForm.GateServiceId != '' &&
+        typeof this.selectedGroup != 'undefined' &&
+        this.selectedGroup != null
+      ) {
+        var fetchUrl = `http://localhost:8081/api/Services/GetServices?ids=${this.filteredIdArr.join(
+          '&ids=',
+        )}&groupId=${
+          this.selectedGroup.servicegroupid
+        }&offset=${offset}&limit=${this.perPageElementCount}`
+        return fetchUrl
+      } else if (
+        this.filterForm.GateServiceId != '' &&
+        (typeof this.selectedGroup == 'undefined' || this.selectedGroup == null)
+      ) {
+        var fetchUrl = `http://localhost:8081/api/Services/GetServices?ids=${this.filteredIdArr.join(
+          '&ids=',
+        )}&offset=${offset}&limit=${this.perPageElementCount}`
+        return fetchUrl
+      } else if (
+        this.filterForm.GateServiceId == '' &&
+        typeof this.selectedGroup != 'undefined' &&
+        this.selectedGroup != null
+      ) {
+        var fetchUrl = `http://localhost:8081/api/Services/GetServices?groupId=${this.selectedGroup.servicegroupid}&offset=${offset}&limit=${this.perPageElementCount}`
+        return fetchUrl
+      } else if (
+        this.filterForm.GateServiceId == '' &&
+        typeof this.selectedGroup == 'undefined' &&
+        this.selectedGroup == null
+      ) {
+        var fetchUrl = `http://localhost:8081/api/Services/GetServices?offset=${offset}&limit=${this.perPageElementCount}`
+        return fetchUrl
+      }
+    },
     filterSelectedGroup: function (data) {
-      this.isPageLoading = true
-      fetch(
-        `http://localhost:8081/api/Services/GetServices?groupId=${data.servicegroupid}`,
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          this.dbData = data.services
-          this.totalElementCount = data.totalCount
-          this.dbData = this.createNewModelArray(data.services)
-          this.isPageLoading = false
-        })
+      this.selectedGroup = data
+      this.filterElements()
+    },
+    filterRemovedGroup: function () {
+      this.selectedGroup = null
+      this.filterElements()
     },
     setNewParameterNull: function () {
       this.newParameter = {
@@ -1009,24 +1044,20 @@ export default {
       }
     },
     pageSelected: function (pageId) {
-      console.log(pageId)
       // this.db = this.dbData.slice(
       //   (pageId - 1) * this.perPageElementCount,
       //   (pageId - 1) * this.perPageElementCount + this.perPageElementCount,
       // )
       this.isPageLoading = true
-      fetch(
-        `http://localhost:8081/api/Services/GetServices?offset=${
-          (pageId - 1) * this.perPageElementCount
-        }&limit=${this.perPageElementCount}`,
-        store.dispatch('fetchGetObject'),
-      )
+      var offset = (pageId - 1) * this.perPageElementCount
+      console.log(this.checkFilter(offset))
+      fetch(this.checkFilter(offset), store.dispatch('fetchGetObject'))
         .then((response) => response.json())
         .then((data) => {
+          console.log(data)
           this.dbData = data.services
           this.totalElementCount = data.totalCount
           this.dbData = this.createNewModelArray(data.services)
-          console.log(data)
           this.isPageLoading = false
         })
       console.log(
@@ -1068,6 +1099,22 @@ export default {
     toNumber: function (value) {
       return Number(value)
     },
+    toNestedGroups: function (data, pid = 0) {
+      return data.reduce((r, e) => {
+        if (pid == e.parent) {
+          const object = { ...e }
+          const children = toNested(data, e.parentservicegroupid)
+
+          if (children.length) {
+            object.children = children
+          }
+
+          r.push(object)
+        }
+
+        return r
+      }, [])
+    },
     createNewModelArray: function (data) {
       return data.map((obj) => ({
         ...obj,
@@ -1080,6 +1127,9 @@ export default {
   },
   beforeMount() {
     this.isPageLoading = true
+    console.log(
+      `http://localhost:8081/api/Services/GetServices?offset=0&limit=${this.perPageElementCount}`,
+    )
     fetch(
       `http://localhost:8081/api/Services/GetServices?offset=0&limit=${this.perPageElementCount}`,
       store.dispatch('fetchGetObject'),
@@ -1095,7 +1145,27 @@ export default {
     fetch('http://localhost:8081/api/Services/GetGroups')
       .then((response) => response.json())
       .then((data) => {
-        this.dbGroups = data
+        this.dbGroups = data.map((obj) => {
+          if (obj.parentservicegroupid == null) {
+            obj.parentservicegroupid = 0
+          }
+          return obj
+        })
+
+        this.nestedDbGroups = { servicegroupid: 0, name: 'root', children: [] }
+
+        const addChild = (obj, parent) => {
+          if (obj.parentservicegroupid === parent.servicegroupid) {
+            parent.children.push({ ...obj, children: [] })
+          } else {
+            parent.children.forEach((item) => addChild(obj, item))
+          }
+        }
+        const buildTree = (arr) =>
+          arr.forEach((obj) => addChild(obj, this.nestedDbGroups))
+
+        buildTree(this.dbGroups)
+        console.log(this.nestedDbGroups)
       })
     // fetch('http://localhost:8081/api/services/getgroups', {
     //   method: 'Get',

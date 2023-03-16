@@ -2,6 +2,7 @@
   <div class="modal-vue">
     <div
       ref="container"
+      style="scroll-behavior: smooth"
       :class="{
         'checkAll-modal p-3': !isMinimized,
         'checkAll-modal-minimized border shadow': isMinimized,
@@ -83,12 +84,13 @@
           class="checkAll-item-animation border rounded my-2 ps-3 d-flex justify-content-between align-items-center position-relative"
         >
           <div>
-            <!-- <CIcon
-              class="cursor-pointer"
-              :content="icons.cilInfo"
-              @click="showInfo(item.id, 'checkAll')"
-            /> -->
             <CIcon
+              v-if="item.isLoading"
+              class="cursor-pointer"
+              :content="icons.cilApplications"
+            />
+            <CIcon
+              v-if="!item.isLoading"
               class="cursor-pointer"
               :content="icons.cilInfo"
               @click="showInfo(item.id, 'checkAll')"
@@ -97,16 +99,17 @@
           <div class="px-2 text-secondary small">{{ item.serviceid }}</div>
           <div class="w-85 small">{{ item.name }}</div>
           <LoaderCheck :isLoading="item.isLoading"></LoaderCheck>
-          <div
-            v-if="item.checkedElementStatus.success"
-            class="element-checked-success w-15 h-100"
-          >
+          <div class="w-15 h-100" v-if="!item.isLoading">
             <div
-              class="bg-success text-light rounded h-100 d-flex justify-content-center align-items-center cursor-pointer"
+              v-if="item.checkedElementStatus.success"
+              class="element-checked-success w-100 h-100"
             >
-              Success
-            </div>
-            <!-- <div class="check-wrapper-success">
+              <div
+                class="bg-success text-light rounded h-100 d-flex justify-content-center align-items-center cursor-pointer"
+              >
+                Success
+              </div>
+              <!-- <div class="check-wrapper-success">
               <svg
                 class="checkmark-success"
                 xmlns="http://www.w3.org/2000/svg"
@@ -126,17 +129,17 @@
                 />
               </svg>
             </div> -->
-          </div>
-          <div
-            v-if="item.checkedElementStatus.error"
-            class="element-checked-error w-15"
-          >
-            <div
-              class="bg-danger text-light rounded h-100 d-flex justify-content-center align-items-center cursor-pointer"
-            >
-              Error
             </div>
-            <!-- <svg
+            <div
+              v-if="item.checkedElementStatus.error"
+              class="element-checked-error w-100"
+            >
+              <div
+                class="bg-danger text-light rounded h-100 d-flex justify-content-center align-items-center cursor-pointer"
+              >
+                Error
+              </div>
+              <!-- <svg
               version="1.1"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 130.2 130.2"
@@ -176,6 +179,7 @@
                 y2="92.2"
               />
             </svg> -->
+            </div>
           </div>
           <div>
             <div

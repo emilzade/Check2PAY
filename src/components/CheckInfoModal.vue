@@ -1,7 +1,7 @@
 <template>
   <div
     class="w-100 h-100 p-3 border rounded check-info-modal"
-    v-if="item != null"
+    v-if="item != null && !item.isLoading"
   >
     <ul class="list-group list-group-flush">
       <li class="list-group-item break-word">
