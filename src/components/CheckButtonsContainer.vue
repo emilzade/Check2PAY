@@ -30,7 +30,7 @@
         </CDropdown>
       </CButtonGroup>
     </CCol>
-    <CCol class="col-12 my-2 d-flex justify-content-between">
+    <CCol class="col-6 my-2 d-flex justify-content-between">
       <CButtonGroup role="button">
         <CButton color="info" variant="outline" @click="selectAllDataClick"
           >Select All</CButton
