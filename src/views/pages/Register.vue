@@ -12,11 +12,37 @@
                   <CInputGroupText>
                     <CIcon icon="cil-user" />
                   </CInputGroupText>
-                  <CFormInput placeholder="Username" autocomplete="username" />
+                  <CFormInput
+                    placeholder="First Name"
+                    v-model="formData.firstname"
+                  />
                 </CInputGroup>
                 <CInputGroup class="mb-3">
-                  <CInputGroupText>@</CInputGroupText>
-                  <CFormInput placeholder="Email" autocomplete="email" />
+                  <CInputGroupText>
+                    <CIcon icon="cil-user" />
+                  </CInputGroupText>
+                  <CFormInput
+                    placeholder="Last Name"
+                    v-model="formData.lastname"
+                  />
+                </CInputGroup>
+                <CInputGroup class="mb-3">
+                  <CInputGroupText>
+                    <CIcon icon="cil-user" />
+                  </CInputGroupText>
+                  <CFormInput
+                    placeholder="Username"
+                    v-model="formData.username"
+                  />
+                </CInputGroup>
+                <CInputGroup class="mb-3">
+                  <CInputGroupText>
+                    <CIcon icon="cil-at" />
+                  </CInputGroupText>
+                  <CFormInput
+                    placeholder="Email account"
+                    v-model="formData.email"
+                  />
                 </CInputGroup>
                 <CInputGroup class="mb-3">
                   <CInputGroupText>
@@ -25,7 +51,7 @@
                   <CFormInput
                     type="password"
                     placeholder="Password"
-                    autocomplete="new-password"
+                    v-model="formData.password"
                   />
                 </CInputGroup>
                 <CInputGroup class="mb-4">
@@ -35,11 +61,13 @@
                   <CFormInput
                     type="password"
                     placeholder="Repeat password"
-                    autocomplete="new-password"
+                    v-model="repeatPassword"
                   />
                 </CInputGroup>
                 <div class="d-grid">
-                  <CButton color="success">Create Account</CButton>
+                  <CButton color="success" @click="createAccount"
+                    >Create Account</CButton
+                  >
                 </div>
               </CForm>
             </CCardBody>
@@ -53,5 +81,38 @@
 <script>
 export default {
   name: 'Register',
+  data() {
+    const formData = {
+      firstname: '',
+      lastname: '',
+      username: '',
+      email: '',
+      password: '',
+    }
+    const repeatPassword = ''
+    return {
+      formData,
+      repeatPassword,
+    }
+  },
+  methods: {
+    createAccount: function () {
+      console.log(this.formData)
+      if (this.formData.password != this.repeatPassword) {
+        // alert for not correct password
+      } else {
+        const configObject = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.formData),
+        }
+        fetch(
+          'http://localhost:84/api/Authenticate/register',
+          configObject,
+        ).then((response) => response.json().then((data) => console.log(data)))
+      }
+    },
+  },
+  beforeMount() {},
 }
 </script>

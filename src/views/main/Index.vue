@@ -1,10 +1,9 @@
 <template>
-  <!--check history multiple input array-->
   <CRow class="w-75 m-auto d-flex align-items-center">
     <CCol class="col-md-4 col-12 m-auto py-2 position-relative">
       <CFormInput
         v-model="filterForm.GateServiceId"
-        id="gate_service_id"
+        id="gateServiceId"
         type="text"
         placeholder="Filter by Gate Service Id"
         class="w-100 h-100"
@@ -32,7 +31,7 @@
     <CCol class="col-md-4 col-12 m-auto py-2">
       <VueMultiselect
         v-model="selectedGroup"
-        :options="dbGroups"
+        :options="dbGroups.data"
         :limit="1"
         :multiple="false"
         :close-on-select="true"
@@ -58,6 +57,17 @@
     @checkSelected="checkSelected"
     @checkTopServices="checkTopServices"
   ></CheckButtonsContainer>
+
+  <!-- <div
+    style="height: 300px; overflow-x: hidden; overflow-y: auto"
+    class="border border-dark p-2 fw-bold w-25"
+  >
+    <NestedGroups
+      :value="nestedDbGroups.children"
+      @filterGroup="filterSelectedGroup"
+      @salam="hey"
+    ></NestedGroups>
+  </div> -->
 
   <CTable responsive striped small hover>
     <CTableHead>
@@ -103,7 +113,7 @@
         </CTableDataCell>
         <CTableDataCell>
           <span style="width: 100px; overflow: hidden">
-            {{ item.gate_service_id }}
+            {{ item.gateServiceId }}
           </span>
         </CTableDataCell>
         <CTableDataCell class="w-25">
@@ -123,12 +133,8 @@
         <CTableDataCell class="w-25">
           <div class="w-50 d-flex justify-content-between pt-1">
             <CIcon
-              v-c-tooltip="{
-                content: 'Check this element',
-                placement: 'top',
-              }"
               :content="icons.cilMediaPlay"
-              @click="checkElement(item.gate_service_id)"
+              @click="checkElement(item.gateServiceId)"
               role="button"
               class="text-success"
             ></CIcon>
@@ -136,27 +142,19 @@
               :to="{
                 name: 'HistoryById',
                 params: {
-                  id: item.gate_service_id,
+                  id: item.gateServiceId,
                 },
               }"
             >
               <CIcon
-                v-c-tooltip="{
-                  content: 'History of this element',
-                  placement: 'top',
-                }"
                 :content="icons.cilHistory"
                 role="button"
                 class="text-warning d-block"
               ></CIcon>
             </router-link>
             <CIcon
-              v-c-tooltip="{
-                content: 'Settings of this element',
-                placement: 'top',
-              }"
               :content="icons.cilSettings"
-              @click="getParameterList(item.gate_service_id)"
+              @click="getParameterList(item.gateServiceId)"
               role="button"
               class="text-dark"
             ></CIcon>
@@ -169,7 +167,7 @@
   <div class="d-flex justify-content-center text-center pt-3">
     <pagination
       v-model="currentPage"
-      :records="totalElementCount"
+      :records="dbData.totalCount"
       :per-page="perPageElementCount"
       @paginate="pageSelected"
       :options="{ chunk: 8 }"
@@ -297,6 +295,8 @@ import {
   cilArrowLeft,
   cilArrowBottom,
   cilApplications,
+  cilLockLocked,
+  cilLockUnlocked,
 } from '@coreui/icons'
 
 import Pagination from 'v-pagination-3'
@@ -313,6 +313,7 @@ import VueMultiselect from 'vue-multiselect'
 import Number1 from '@/assets/images/number-1.png'
 import Number2 from '@/assets/images/number-2.png'
 import Number3 from '@/assets/images/number-3.png'
+//import NestedGroups from '@/components/NestedGroups.vue'
 export default {
   components: {
     Pagination,
@@ -331,13 +332,19 @@ export default {
   data() {
     const thData = [
       { id: 0, title: '', sortBy: null },
-      { id: 1, title: 'Gate Service Id', sortBy: 'id' },
+      { id: 1, title: 'Gate Service Id', sortBy: 'gateServiceId' },
       { id: 2, title: 'Name', sortBy: 'name' },
       { id: 3, title: 'Active', sortBy: 'active' },
       { id: 4, title: 'Operations', sortBy: null },
     ]
-    const dbData = []
-    const dbGroups = []
+    const dbData = {
+      data: [],
+      totalCount: 0,
+    }
+    const dbGroups = {
+      data: [],
+      totalCount: 0,
+    }
     const nestedDbGroups = { servicegroupid: 0, name: 'root', children: [] }
     const checkAllData = []
     const selectedTableData = []
@@ -360,7 +367,6 @@ export default {
         error: false,
       },
     }
-    const totalElementCount = 0
     const perPageElementCount = 10
     const currentPage = 1
     const currentSort = 'topservicesid'
@@ -404,6 +410,8 @@ export default {
       cilArrowLeft,
       cilArrowBottom,
       cilApplications,
+      cilLockLocked,
+      cilLockUnlocked,
     }
 
     return {
@@ -435,7 +443,6 @@ export default {
 
       currentPage,
       perPageElementCount,
-      totalElementCount,
 
       isServiceNameValid,
       isCheckModalActive,
@@ -463,7 +470,7 @@ export default {
     },
     sortedSearchResults() {
       /*eslint-disable*/
-      return this.dbData.sort((a, b) => {
+      return this.dbData.data.sort((a, b) => {
         let modifier = 1
         if (this.currentSortDir === 'desc') modifier = -1
         if (a[this.currentSort] < b[this.currentSort]) return -1 * modifier
@@ -476,20 +483,20 @@ export default {
   },
   methods: {
     GetCheckAllDataAndCheck: function () {
-      fetch('http://localhost:8081/api/Services/GetAllSimplifiedServices')
+      fetch('http://localhost:84/api/Services/GetAllSimplifiedServices')
         .then((response) => response.json())
         .then((data) => this.checkAll(data))
     },
-    checkElement: async function (gate_service_id) {
+    checkElement: async function (gateServiceId) {
       this.isCheckModalActive = true
-      this.currentlyCheckingElement = this.dbData.filter(
-        (n) => n.gate_service_id == gate_service_id,
-      )[0]
+      this.currentlyCheckingElement = this.dbData.data.find(
+        (n) => n.gateServiceId == gateServiceId,
+      )
       this.currentlyCheckingElement.checkedElementStatus.success = false
       this.currentlyCheckingElement.checkedElementStatus.error = false
       this.currentlyCheckingElement.isLoading = true
       await fetch(
-        `http://localhost:8081/api/checkRequest/SingleCheck?PRV_ID=${gate_service_id}`,
+        `http://localhost:84/api/checkRequest/SingleCheck?PRV_ID=${gateServiceId}&userId=bcd4`,
         {
           method: 'GET',
           headers: {
@@ -499,12 +506,13 @@ export default {
       )
         .then(async (response) => await response.json())
         .then(async (data) => {
+          console.log(data)
           await this.checkAsync(data)
         })
     },
     checkAsync: async function (data) {
       console.log(data)
-      if (data.resultcodeid == 0) {
+      if (data.resultCode == 0) {
         this.currentlyCheckingElement.checkedElementStatus.success = true
       } else {
         this.currentlyCheckingElement.checkedElementStatus.error = true
@@ -554,15 +562,15 @@ export default {
       this.checkTimeHandler()
 
       for (let i = 0; i < payload.length; i++) {
-        console.log(payload[i].gate_service_id + ' ' + payload[i].name)
+        console.log(payload[i].gateServiceId + ' ' + payload[i].name)
         var tempData = {
-          serviceid: payload[i].gate_service_id,
+          gateServiceId: payload[i].gateServiceId,
           name: payload[i].name,
           isLoading: true,
         }
         this.checkAllData.push(tempData)
         await fetch(
-          `http://localhost:8081/api/checkRequest/singlecheck?PRV_ID=${payload[i].gate_service_id}`,
+          `http://localhost:84/api/checkRequest/singlecheck?PRV_ID=${payload[i].gateServiceId}&userId=bcd4`,
           {
             method: 'GET',
             headers: {
@@ -572,9 +580,10 @@ export default {
         )
           .then(async (response) => await response.json())
           .then((data) => {
+            console.log(data)
             //try {
             var index = payload.findIndex(
-              (x) => x.gate_service_id == payload[i].gate_service_id,
+              (x) => x.gateServiceId == payload[i].gateServiceId,
             )
             this.checkAllData[index] = {
               ...data,
@@ -582,8 +591,8 @@ export default {
               isShowInfoActive: false,
               isLoading: false,
               checkedElementStatus: {
-                success: data.resultcodeid == 0 ? true : false,
-                error: data.resultcodeid != 0 ? true : false,
+                success: data.resultCode == 0 ? true : false,
+                error: data.resultCode != 0 ? true : false,
               },
             }
             console.log(this.checkAllData[index])
@@ -609,7 +618,7 @@ export default {
         if (i == payload.length - 1) {
           break
         }
-        this.currentCheckingElementNumber = i
+        this.currentCheckingElementNumber = i + 1
         //console.log(this.$refs.container.scrollY)
       }
     },
@@ -628,7 +637,7 @@ export default {
     //   var counter = 0
     //   var checkAllInterval = setInterval(async () => {
     //     fetch(
-    //       `http://localhost:8081/api/checkRequest/singlecheck?PRV_ID=${this.dbData[counter].gate_service_id}`,
+    //       `http://localhost:84/api/checkRequest/singlecheck?PRV_ID=${this.dbData[counter].gateServiceId}`,
     //       {
     //         method: 'GET',
     //         headers: {
@@ -638,7 +647,7 @@ export default {
     //     )
     //       .then(async (response) => await response.json())
     //       .then((data) => {
-    //         console.log(this.dbData[counter].gate_service_id)
+    //         console.log(this.dbData[counter].gateServiceId)
     //         console.log(data)
     //         try {
     //           var newData = {
@@ -646,8 +655,8 @@ export default {
     //             name: this.dbData[counter].name,
     //             isShowInfoActive: false,
     //             checkedElementStatus: {
-    //               success: data.resultcodeid == 0 ? true : false,
-    //               error: data.resultcodeid != 0 ? true : false,
+    //               success: data.resultCode == 0 ? true : false,
+    //               error: data.resultCode != 0 ? true : false,
     //             },
     //           }
     //           this.checkAllData.push(newData)
@@ -696,7 +705,7 @@ export default {
         }
         for (let i = 0; i < this.selectedTableData.length; i++) {
           await fetch(
-            `http://localhost:8081/api/checkRequest/singleCheck?PRV_ID=${this.selectedTableData[i].gate_service_id}`,
+            `http://localhost:84/api/checkRequest/singleCheck?PRV_ID=${this.selectedTableData[i].gateServiceId}&userId=bcd4`,
             {
               method: 'GET',
               headers: {
@@ -710,7 +719,7 @@ export default {
               try {
                 this.selectedTableData[i].checkData = data
 
-                if (data.resultcodeid == 0) {
+                if (data.resultCode == 0) {
                   this.selectedTableData[i].checkedElementStatus.success = true
                   this.selectedTableData[i].checkedElementStatus.error = false
                 } else {
@@ -733,7 +742,7 @@ export default {
     },
     checkTopServices: function (limit) {
       fetch(
-        `http://localhost:8081/api/Services/GetServices?offset=0&limit=${limit}`,
+        `http://localhost:84/api/Services/GetServices?offset=0&limit=${limit}`,
       )
         .then((response) => response.json())
         .then((data) => this.checkAll(this.createNewModelArray(data.services)))
@@ -770,7 +779,7 @@ export default {
     getParameterList: function (id) {
       this.isParameterLoading = true
       this.isSettingsModalActive = true
-      fetch(`http://localhost:8081/api/services/getParametersList/${id}`, {
+      fetch(`http://localhost:84/api/services/getParametersList/${id}`, {
         method: 'GET',
         headers: {
           'Content-type': 'application/json; charset=UTF-8',
@@ -779,8 +788,8 @@ export default {
         .then((response) => response.json())
         .then((data) => {
           this.parameterListOfElement.Id = id
-          this.parameterListOfElement.Name = this.dbData.filter(
-            (n) => n.gate_service_id == id,
+          this.parameterListOfElement.Name = this.dbData.data.filter(
+            (n) => n.gateServiceId == id,
           )[0].name
           this.parameterListOfElement.parameterList = data
 
@@ -800,7 +809,7 @@ export default {
           'Content-type': 'application/json',
         },
       }
-      fetch('http://localhost:8081/api/Services/UpdateParameter', configObject)
+      fetch('http://localhost:84/api/Services/UpdateParameter', configObject)
         .then((response) => response.json())
         .then((data) => {
           if (data) {
@@ -819,16 +828,18 @@ export default {
     },
     addNewParameterToService: function (id, newParameter) {
       this.isParameterInputFocused = false
-      newParameter.serviceid = id
       if (isProxy(newParameter)) {
         var reqObject = toRaw(newParameter)
       }
+      console.log(reqObject)
       const configObject = {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reqObject),
+        headers: {
+          'Content-type': 'application/json;charset=UTF-8',
+        },
+        body: JSON.stringify([reqObject]),
       }
-      fetch(`http://localhost:8081/api/Services/AddParameter`, configObject)
+      fetch(`http://localhost:84/api/Services/AddParameter`, configObject)
         .then((response) => response.json())
         .then((data) => {
           console.log(data)
@@ -849,14 +860,8 @@ export default {
     },
     removeParameter: function (serviceId, parameterId) {
       this.isParameterInputFocused = false
-      const configObject = {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      }
-      fetch(
-        `http://localhost:8081/api/Services/RemoveParameter/${parameterId}`,
-        configObject,
-      )
+
+      fetch(`http://localhost:84/api/Services/RemoveParameter/${parameterId}`)
         .then((response) => response.json())
         .then((data) => {
           console.log(data)
@@ -956,7 +961,7 @@ export default {
       //strArr = strArr.map(this.toNumber)
 
       // return dbData.filter((value) =>
-      //   strArr.some((x) => value.gate_service_id.toString().includes(x)),
+      //   strArr.some((x) => value.gateServiceId.toString().includes(x)),
       // )
 
       console.log(this.checkFilter())
@@ -964,9 +969,8 @@ export default {
         .then((response) => response.json())
         .then((data) => {
           console.log(data)
-          this.dbData = data.services
-          this.totalElementCount = data.totalCount
-          this.dbData = this.createNewModelArray(data.services)
+          this.dbData = data
+          this.dbData.data = this.createNewModelArray(data.data)
           this.isPageLoading = false
         })
       // if (this.filterForm.GateServiceId == '') {
@@ -974,13 +978,13 @@ export default {
       // } else {
       //   return dbData.filter((element) => {
       //     return strArr.some((id) => {
-      //       return element.gate_service_id.toString().includes(id)
+      //       return element.gateServiceId.toString().includes(id)
       //     })
       //   })
       // }
 
       // return dbData.filter((n) =>
-      //   n.gate_service_id.toString().includes(this.filterForm.GateServiceId),
+      //   n.gateServiceId.toString().includes(this.filterForm.GateServiceId),
       // )
     },
     filterElementsByName: function (dbData) {
@@ -993,45 +997,47 @@ export default {
       if (typeof offset == 'undefined') offset = 0
       if (
         this.filterForm.GateServiceId != '' &&
-        typeof this.selectedGroup != 'undefined' &&
+        this.selectedGroup != null &&
         this.selectedGroup != null
       ) {
-        var fetchUrl = `http://localhost:8081/api/Services/GetServices?ids=${this.filteredIdArr.join(
+        var fetchUrl = `http://localhost:84/api/Services/GetServices?ids=${this.filteredIdArr.join(
           '&ids=',
-        )}&groupId=${
-          this.selectedGroup.servicegroupid
-        }&offset=${offset}&limit=${this.perPageElementCount}`
+        )}&groupId=${this.selectedGroup.id}&offset=${offset}&limit=${
+          this.perPageElementCount
+        }`
         return fetchUrl
       } else if (
         this.filterForm.GateServiceId != '' &&
-        (typeof this.selectedGroup == 'undefined' || this.selectedGroup == null)
+        (this.selectedGroup == null || this.selectedGroup == null)
       ) {
-        var fetchUrl = `http://localhost:8081/api/Services/GetServices?ids=${this.filteredIdArr.join(
+        var fetchUrl = `http://localhost:84/api/Services/GetServices?ids=${this.filteredIdArr.join(
           '&ids=',
         )}&offset=${offset}&limit=${this.perPageElementCount}`
         return fetchUrl
       } else if (
         this.filterForm.GateServiceId == '' &&
-        typeof this.selectedGroup != 'undefined' &&
+        this.selectedGroup != null &&
         this.selectedGroup != null
       ) {
-        var fetchUrl = `http://localhost:8081/api/Services/GetServices?groupId=${this.selectedGroup.servicegroupid}&offset=${offset}&limit=${this.perPageElementCount}`
+        var fetchUrl = `http://localhost:84/api/Services/GetServices?groupId=${this.selectedGroup.id}&offset=${offset}&limit=${this.perPageElementCount}`
         return fetchUrl
       } else if (
         this.filterForm.GateServiceId == '' &&
-        typeof this.selectedGroup == 'undefined' &&
+        this.selectedGroup == null &&
         this.selectedGroup == null
       ) {
-        var fetchUrl = `http://localhost:8081/api/Services/GetServices?offset=${offset}&limit=${this.perPageElementCount}`
+        var fetchUrl = `http://localhost:84/api/Services/GetServices?offset=${offset}&limit=${this.perPageElementCount}`
         return fetchUrl
       }
     },
     filterSelectedGroup: function (data) {
+      console.log(data)
       this.selectedGroup = data
       this.filterElements()
     },
     filterRemovedGroup: function () {
       this.selectedGroup = null
+      console.log(this.selectedGroup)
       this.filterElements()
     },
     setNewParameterNull: function () {
@@ -1072,7 +1078,7 @@ export default {
     selectAllDataClick: function () {
       if (this.isSelectedAll == false) {
         this.isSelectedAll = true
-        this.selectedTableData = this.dbData
+        this.selectedTableData = this.dbData.data
       } else {
         this.isSelectedAll = false
         this.selectedTableData = []
@@ -1128,46 +1134,46 @@ export default {
   beforeMount() {
     this.isPageLoading = true
     console.log(
-      `http://localhost:8081/api/Services/GetServices?offset=0&limit=${this.perPageElementCount}`,
+      `http://localhost:84/api/Services/GetServices?offset=0&limit=${this.perPageElementCount}`,
     )
     fetch(
-      `http://localhost:8081/api/Services/GetServices?offset=0&limit=${this.perPageElementCount}`,
+      `http://localhost:84/api/Services/GetServices?offset=0&limit=${this.perPageElementCount}`,
       store.dispatch('fetchGetObject'),
     )
       .then((response) => response.json())
       .then((data) => {
-        this.dbData = data.services
-        this.totalElementCount = data.totalCount
-        this.dbData = this.createNewModelArray(data.services)
+        this.dbData = data
+        this.dbData.data = this.createNewModelArray(data.data)
         console.log(data)
         this.isPageLoading = false
       })
-    fetch('http://localhost:8081/api/Services/GetGroups')
+    fetch('http://localhost:84/api/Services/GetGroups')
       .then((response) => response.json())
       .then((data) => {
-        this.dbGroups = data.map((obj) => {
+        console.log(data)
+        this.dbGroups.data = data.data.map((obj) => {
           if (obj.parentservicegroupid == null) {
             obj.parentservicegroupid = 0
           }
           return obj
         })
 
-        this.nestedDbGroups = { servicegroupid: 0, name: 'root', children: [] }
+        // this.nestedDbGroups = { servicegroupid: 0, name: 'root', children: [] }
 
-        const addChild = (obj, parent) => {
-          if (obj.parentservicegroupid === parent.servicegroupid) {
-            parent.children.push({ ...obj, children: [] })
-          } else {
-            parent.children.forEach((item) => addChild(obj, item))
-          }
-        }
-        const buildTree = (arr) =>
-          arr.forEach((obj) => addChild(obj, this.nestedDbGroups))
+        // const addChild = (obj, parent) => {
+        //   if (obj.parentservicegroupid === parent.servicegroupid) {
+        //     parent.children.push({ ...obj, children: [] })
+        //   } else {
+        //     parent.children.forEach((item) => addChild(obj, item))
+        //   }
+        // }
+        // const buildTree = (arr) =>
+        //   arr.forEach((obj) => addChild(obj, this.nestedDbGroups))
 
-        buildTree(this.dbGroups)
-        console.log(this.nestedDbGroups)
+        // buildTree(this.dbGroups)
+        // console.log(this.nestedDbGroups)
       })
-    // fetch('http://localhost:8081/api/services/getgroups', {
+    // fetch('http://localhost:84/api/services/getgroups', {
     //   method: 'Get',
     //   headers: {
     //     'Content-type': 'application/json;charset=UTF-8',

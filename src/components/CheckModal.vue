@@ -6,7 +6,7 @@
     >
       <div class="">
         <span class="text-secondary pe-2">{{
-          currentElement.gate_service_id
+          currentElement.gateServiceId
         }}</span>
         <span>{{ currentElement.name }}</span>
       </div>

@@ -44,37 +44,50 @@
           <CRow>
             <!--parameterListOfElement-->
             <CCol
-              v-for="parameterOfElement in parameterListOfElement.parameterList"
+              v-for="parameter in parameterListOfElement.parameterList"
               class="col-12 my-2 d-flex justify-content-between"
-              :key="parameterOfElement.Id"
+              :key="parameter.Id"
             >
               <CFormLabel class="w-50 mx-2 text-secondary my-auto"
-                >Parameter namee
+                >Parameter name
                 <CFormInput
-                  :value="parameterOfElement.name"
-                  @input="
-                    (event) => (parameterOfElement.name = event.target.value)
-                  "
+                  :value="parameter.name"
+                  @input="(event) => (parameter.name = event.target.value)"
                   @focus="parameterInputFocused"
                 />
               </CFormLabel>
               <CFormLabel class="w-50 mx-2 text-secondary my-auto"
                 >Parameter value
                 <CFormInput
-                  :value="parameterOfElement.value"
-                  @input="
-                    (event) => (parameterOfElement.value = event.target.value)
-                  "
+                  :value="parameter.value"
+                  @input="(event) => (parameter.value = event.target.value)"
                   @focus="parameterInputFocused"
                 />
               </CFormLabel>
               <div
+                v-if="parameter.isTestDataStatic == true"
+                class="btn btn-success d-flex justify-content-center align-items-center mt-4 mx-1"
+                @click="parameter.isTestDataStatic = false"
+              >
+                <CIcon
+                  class="text-light"
+                  :content="icons.cilLockLocked"
+                ></CIcon>
+              </div>
+              <div
+                v-else
+                class="btn btn-secondary d-flex justify-content-center align-items-center mt-4 mx-1"
+                @click="parameter.isTestDataStatic = true"
+              >
+                <CIcon
+                  class="text-light"
+                  :content="icons.cilLockUnlocked"
+                ></CIcon>
+              </div>
+              <div
                 class="btn btn-danger d-flex justify-content-center align-items-center mt-4"
                 @click="
-                  removeParameter(
-                    parameterListOfElement.Id,
-                    parameterOfElement.id,
-                  )
+                  removeParameter(parameterListOfElement.Id, parameter.id)
                 "
               >
                 <CIcon class="text-light" :content="icons.cilTrash"></CIcon>
@@ -144,11 +157,11 @@ export default {
   ],
   data() {
     const newParameter = {
-      id: 1,
-      active: true,
-      serviceid: null,
+      id: 0,
+      gateServiceId: null,
       name: null,
       value: null,
+      isTestDataStatic: false,
     }
     return {
       newParameter,
@@ -165,9 +178,11 @@ export default {
       this.$emit('paramInputFocused')
     },
     removeParameter(serviceId, parameterId) {
+      console.log(serviceId, parameterId)
       this.$emit('removeParameterOfElement', serviceId, parameterId)
     },
     addNewParameter: function (id) {
+      this.newParameter.gateServiceId = this.parameterListOfElement.Id
       this.$emit('addNewParameter', id, this.newParameter)
     },
     editParameter: function (id) {

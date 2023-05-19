@@ -18,7 +18,7 @@
             !isMinimized,
           'Check-All-Inner-ModalMinimized justify-content-center': isMinimized,
         }"
-        class="d-flex overflow-hidden p-1 bg-light rounded-top align-items-center transition-1"
+        class="d-flex overflow-hidden p-2 bg-light rounded-top align-items-center transition-1"
       >
         <div v-if="!isMinimized" class="d-flex gap-4 fs-08">
           <div>
@@ -44,10 +44,16 @@
         </div>
         <div class="d-flex gap-4 align-items-center">
           <div v-if="!isMinimized" @click="stopCheckAll">
-            <div class="btn btn-danger text-light" v-if="!isStopped">
-              Stop Loading
+            <div
+              style="width: 80px"
+              class="btn btn-danger text-light"
+              v-if="!isStopped"
+            >
+              Stop
             </div>
-            <div class="btn btn-secondary disabled" v-else>Stopped</div>
+            <div style="width: 80px" class="btn btn-secondary disabled" v-else>
+              Stopped
+            </div>
           </div>
           <CIcon
             v-if="!isMinimized"
@@ -96,15 +102,29 @@
               @click="showInfo(item.id, 'checkAll')"
             />
           </div>
-          <div class="px-2 text-secondary small">{{ item.serviceid }}</div>
-          <div class="w-85 small">{{ item.name }}</div>
-          <LoaderCheck :isLoading="item.isLoading"></LoaderCheck>
-          <div class="w-15 h-100" v-if="!item.isLoading">
+          <div class="px-2 text-secondary small">{{ item.gateServiceId }}</div>
+          <div
+            style="
+              overflow: hidden;
+              white-space: nowrap;
+              text-overflow: ellipsis;
+            "
+            class="w-85 small"
+          >
+            {{ item.name }}
+          </div>
+          <LoaderCheck
+            class="bg-light rounded"
+            style="width: 60px"
+            :isLoading="item.isLoading"
+          ></LoaderCheck>
+          <div class="h-100" v-if="!item.isLoading">
             <div
               v-if="item.checkedElementStatus.success"
               class="element-checked-success w-100 h-100"
             >
               <div
+                style="width: 60px"
                 class="bg-success text-light rounded h-100 d-flex justify-content-center align-items-center cursor-pointer"
               >
                 Success
@@ -135,6 +155,7 @@
               class="element-checked-error w-100"
             >
               <div
+                style="width: 60px"
                 class="bg-danger text-light rounded h-100 d-flex justify-content-center align-items-center cursor-pointer"
               >
                 Error
@@ -200,13 +221,6 @@
               </div>
               <CheckInfoModal :item="item"></CheckInfoModal>
             </div>
-            <div
-              :class="{
-                'overlay overlay-checkInfo': !isMinimized,
-              }"
-              v-if="item.isShowInfoActive"
-              @click="closeCheckInfo"
-            ></div>
           </div>
         </div>
       </div>
@@ -228,10 +242,10 @@
 }
 @keyframes check-item {
   0% {
-    transform: translateX(-30%);
+    filter: opacity(0.5);
   }
   100% {
-    transform: translateX(0%);
+    filter: opacity(1);
   }
 }
 </style>
@@ -296,6 +310,8 @@ export default {
       return this.$refs.container.scrollTop
     },
   },
-  created() {},
+  beforeMount() {
+    console.log(this.checkData)
+  },
 }
 </script>

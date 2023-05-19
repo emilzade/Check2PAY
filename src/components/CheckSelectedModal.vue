@@ -6,7 +6,7 @@
       v-if="isActive"
     >
       <div
-        class="Check-All-Inner-ModalMaximized justify-content-end d-flex overflow-hidden gap-4 p-1 bg-light border rounded-top align-items-center"
+        class="Check-All-Inner-ModalMaximized justify-content-end d-flex overflow-hidden gap-4 p-2 bg-light rounded-top align-items-center"
       >
         <CIcon
           :content="icons.cilX"
@@ -34,15 +34,25 @@
             <CIcon :content="icons.cilApplications" />
           </div>
           <div class="px-2 text-secondary small">
-            {{ item.gate_service_id }}
+            {{ item.gateServiceId }}
           </div>
-          <div class="w-85 small">{{ item.name }}</div>
+          <div
+            style="
+              overflow: hidden;
+              white-space: nowrap;
+              text-overflow: ellipsis;
+            "
+            class="w-85 small"
+          >
+            {{ item.name }}
+          </div>
           <LoaderCheck :isLoading="item.isLoading"></LoaderCheck>
           <div
             v-if="item.checkedElementStatus.success"
-            class="element-checked-success w-15 h-100"
+            class="element-checked-success h-100"
           >
             <div
+              style="width: 60px"
               class="bg-success text-light rounded h-100 d-flex justify-content-center align-items-center"
             >
               Success
@@ -70,9 +80,10 @@
           </div>
           <div
             v-if="item.checkedElementStatus.error"
-            class="element-checked-error w-15"
+            class="element-checked-error h-100"
           >
             <div
+              style="width: 60px"
               class="bg-danger text-light rounded h-100 d-flex justify-content-center align-items-center"
             >
               Error
@@ -136,13 +147,6 @@
             </div>
             <CheckInfoModal :item="item.checkData"></CheckInfoModal>
           </div>
-          <div
-            :class="{
-              'overlay overlay-checkInfo': !isMinimized,
-            }"
-            v-if="item.isShowInfoActive"
-            @click="closeCheckInfo"
-          ></div>
         </div>
       </div>
     </div>

@@ -43,9 +43,24 @@ const actions = {
       commit('setLoginApiStatus', 'failed')
     }
   },*/
-  async loginApi({ commit }) {
-    localStorage.setItem('isAuthenticated', 'true')
-    commit('setLoginApiStatus', 'success')
+  async loginApi({ commit }, data) {
+    const configObject = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }
+    await fetch('http://localhost:84/api/Authenticate/login', configObject)
+      .then(async (response) => await response.json())
+      .then((data) => {
+        console.log(data)
+        if (data.status == 200) {
+          commit('setLoginApiStatus', 'success')
+          localStorage.setItem('isAuthenticated', 'true')
+        } else if (data.status == 401) {
+          commit('setLoginApiStatus', 'failed')
+          localStorage.setItem('isAuthenticated', 'false')
+        }
+      })
   },
 
   async userProfile({ commit }) {

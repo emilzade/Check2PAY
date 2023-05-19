@@ -15,6 +15,18 @@
     @closeDetailedHistoryModal="closeDetailedHistoryModal"
   ></CheckHistoryDetailedModal>
 
+  <!--pagination start-->
+  <div class="d-flex justify-content-center text-center pt-3">
+    <pagination
+      v-model="currentPage"
+      :records="dbData.totalCount"
+      :per-page="perPageElementCount"
+      @paginate="pageSelected"
+      :options="{ chunk: 8 }"
+    />
+  </div>
+  <!--pagination end-->
+
   <LoaderFullPage :isLoading="isPageLoading"></LoaderFullPage>
 </template>
 <script>
@@ -22,6 +34,7 @@ import { ref } from 'vue'
 import CheckHistoryDetailedModal from '@/components/CheckHistoryDetailedModal.vue'
 import CheckHistoryTable from '@/components/CheckHistoryTable.vue'
 import LoaderFullPage from '@/components/LoaderFullPage.vue'
+import Pagination from 'v-pagination-3'
 import {
   cilInfo,
   cilWarning,
@@ -35,17 +48,20 @@ export default {
     CheckHistoryDetailedModal,
     CheckHistoryTable,
     LoaderFullPage,
+    Pagination,
   },
   data() {
-    const dbData = []
+    const dbData = {
+      totalCount: 0,
+      data: [],
+    }
     const thData = [
-      { id: 1, title: 'Service Id', sortBy: 'serviceid' },
-      { id: 1, title: 'Name', sortBy: 'name' },
-      { id: 2, title: 'Start Date', sortBy: 'start_time' },
-      { id: 3, title: 'User Id', sortBy: 'userid' },
-      { id: 6, title: 'Result', sortBy: 'result' },
-      { id: 6, title: 'Separate', sortBy: 'separate' },
-      { id: 6, title: 'Partition Nº', sortBy: 'partitionnumber' },
+      { id: 1, title: 'Service Id', sortBy: 'gateServiceId' },
+      { id: 1, title: 'Name', sortBy: 'serviceName' },
+      { id: 2, title: 'Start Date', sortBy: 'startTime' },
+      { id: 3, title: 'User Id', sortBy: 'appUserId' },
+      { id: 6, title: 'Result', sortBy: 'resultCode' },
+      { id: 6, title: 'Partition Nº', sortBy: 'partitionNumber' },
       { id: 7, title: 'Operations', sortBy: null },
     ]
     const searchWarning = {
@@ -57,8 +73,11 @@ export default {
     const isDetailedHistoryModalActive = ref(false)
     const isPageLoading = ref(false)
 
-    const currentSort = 'start_time'
+    const currentPage = 1
+    const perPageElementCount = 20
+    const currentSort = 'startTime'
     const currentSortDir = 'desc'
+
     const icons = {
       cilInfo,
       cilWarning,
@@ -74,7 +93,8 @@ export default {
       thData,
       currentSort,
       currentSortDir,
-
+      currentPage,
+      perPageElementCount,
       searchWarning,
       detailedHistory,
       isCheckHistoryHasException,
@@ -83,9 +103,13 @@ export default {
     }
   },
   computed: {
+    dynamicSearchQuery() {
+      return (offset) =>
+        `https://localhost:5006/api/CheckRequest/CheckRequestHistories?serviceId=${this.$route.params.id}&from_date=2020-01-01%2000%3A00&to_date=2025-01-01%2000%3A00&offset=${offset}&limit=${this.perPageElementCount}`
+    },
     sortedSearchResults() {
       /*eslint-disable*/
-      return this.dbData.sort((a, b) => {
+      return this.dbData.data.sort((a, b) => {
         let modifier = 1
         if (this.currentSortDir === 'desc') modifier = -1
         if (a[this.currentSort] < b[this.currentSort]) return -1 * modifier
@@ -97,10 +121,7 @@ export default {
   methods: {
     getDetailedHistory: function (id) {
       this.isDetailedHistoryModalActive = true
-      this.detailedHistory = this.dbData.find((x) => x.id == id)
-      if (this.detailedHistory.exceptiondata) {
-        this.isCheckHistoryHasException = true
-      }
+      this.detailedHistory = this.dbData.data.find((x) => x.id == id)
       console.log(this.detailedHistory)
     },
     closeDetailedHistoryModal: function () {
@@ -114,28 +135,24 @@ export default {
       }
       this.currentSort = sortDir
     },
-    getDbData: function () {
+    pageSelected: function (pageId) {
+      var offset = (pageId - 1) * this.perPageElementCount
+      this.getDbData(offset)
+    },
+    getDbData: function (offset) {
       this.isPageLoading = true
-      fetch(
-        `http://localhost:8081/api/CheckRequest/CheckRequestHistories/${this.$route.params.id}`,
-      )
+      console.log(this.dynamicSearchQuery(offset))
+      fetch(this.dynamicSearchQuery(offset))
         .then((response) => response.json())
         .then((data) => {
           this.dbData = data
-          this.createNewModel(this.dbData)
           console.log(this.dbData)
           this.isPageLoading = false
         })
     },
-    createNewModel: function (data) {
-      this.dbData = data.map((obj) => ({
-        ...obj,
-        result: obj.resultcodeid == 0 ? 'success' : 'error',
-      }))
-    },
   },
   beforeMount() {
-    this.getDbData()
+    this.getDbData(0)
   },
 }
 </script>

@@ -190,7 +190,7 @@ export default {
       cilStream,
     }
     const currentPage = 1
-    const currentSort = 'start_time'
+    const currentSort = 'startTime'
     const currentSortDir = 'desc'
     const isPageLoading = ref(false)
     return {
@@ -229,10 +229,10 @@ export default {
       this.isPageLoading = true
       console.log(this.formData)
       console.log(
-        `http://localhost:8081/api/CheckRequest/CheckRequestHistoriesMulti/?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}&status=${this.formData.status}&from_date=${this.formData.from_date}&to_date=${this.formData.to_date}`,
+        `http://localhost:84/api/CheckRequest/CheckRequestHistoriesMulti/?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}&status=${this.formData.status}&from_date=${this.formData.from_date}&to_date=${this.formData.to_date}`,
       )
       fetch(
-        `http://localhost:8081/api/CheckRequest/CheckRequestHistoriesMulti/?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}&status=${this.formData.status}&from_date=${this.formData.from_date}&to_date=${this.formData.to_date}`,
+        `http://localhost:84/api/CheckRequest/CheckRequestHistoriesMulti/?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}&status=${this.formData.status}&from_date=${this.formData.from_date}&to_date=${this.formData.to_date}`,
       )
         .then((response) => response.json())
         .then((data) => {
@@ -270,7 +270,7 @@ export default {
     getDbData: function () {
       this.isPageLoading = true
       fetch(
-        `http://localhost:8081/api/CheckRequest/CheckRequestHistoriesMulti/?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}&status=${this.formData.status}&from_date=${this.formData.from_date}&to_date=${this.formData.to_date}`,
+        `http://localhost:84/api/CheckRequest/CheckRequestHistoriesMulti/?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}&status=${this.formData.status}&from_date=${this.formData.from_date}&to_date=${this.formData.to_date}`,
       )
         .then((response) => response.json())
         .then((data) => {
@@ -290,7 +290,7 @@ export default {
     createNewModel: function (data) {
       this.dbData = data.map((obj) => ({
         ...obj,
-        result: obj.resultcodeid == 0 ? 'success' : 'error',
+        result: obj.resultCode == 0 ? 'success' : 'error',
       }))
     },
   },

@@ -18,24 +18,24 @@
         </li>
         <li class="list-group-item">
           <span class="text-secondary">Service Id:</span>
-          {{ detailedHistory.serviceid }}
+          {{ detailedHistory.gateServiceId }}
         </li>
         <li class="list-group-item">
           <span class="text-secondary">Service Name:</span>
-          {{ detailedHistory.name }}
+          {{ detailedHistory.serviceName }}
         </li>
         <li class="list-group-item">
-          <span class="text-secondary">User Id:</span> 1
-          {{ detailedHistory.userid }}
+          <span class="text-secondary">User Id:</span>
+          {{ detailedHistory.appUserId }}
         </li>
         <li class="list-group-item">
           <span class="text-secondary">Check Date:</span>
-          {{ detailedHistory.end_time.slice(0, 10) }}
+          {{ detailedHistory.endTime.slice(0, 10) }}
         </li>
         <li class="list-group-item">
           <span class="text-secondary">Check Duration:</span>
-          {{ detailedHistory.start_time.slice(11, 19) }}
-          {{ detailedHistory.end_time.slice(11, 19) }}
+          {{ detailedHistory.startTime.slice(11, 19) }}
+          {{ detailedHistory.endTime.slice(11, 19) }}
         </li>
         <li class="list-group-item">
           <span class="text-secondary">Request:</span>
@@ -52,12 +52,12 @@
         </li>
       </ul>
       <CAlert
-        v-if="hasException"
+        v-if="detailedHistory.resultCode != 0"
         color="danger"
         class="d-flex align-items-center gap-2"
       >
         <CIcon :content="icons.cilBurn" class="flex-shrink-0 me-2" />
-        <div>Exception: {{ detailedHistory.exceptiondata }}</div>
+        <div>Exception: {{ detailedHistory.exceptionData }}</div>
       </CAlert>
       <CAlert v-else color="success" class="d-flex align-items-center gap-2">
         <CIcon :content="icons.cilCheckCircle" class="flex-shrink-0 me-2" />
@@ -74,7 +74,7 @@
 </template>
 <script>
 export default {
-  props: ['detailedHistory', 'isActive', 'hasException', 'icons'],
+  props: ['detailedHistory', 'isActive', 'icons'],
   methods: {
     closeDetailedHistoryModal: function () {
       this.$emit('closeDetailedHistoryModal')

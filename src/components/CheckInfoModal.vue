@@ -1,6 +1,6 @@
 <template>
   <div
-    class="w-100 h-100 p-3 border rounded check-info-modal"
+    class="w-100 h-100 p-3 check-info-modal"
     v-if="item != null && !item.isLoading"
   >
     <ul class="list-group list-group-flush">
@@ -9,7 +9,7 @@
       </li>
       <li class="list-group-item break-word">
         <span class="text-secondary">Service Id:</span>
-        {{ item.serviceid }}
+        {{ item.gateServiceId }}
       </li>
       <li class="list-group-item break-word">
         <span class="text-secondary">Service Name:</span>
@@ -17,16 +17,16 @@
       </li>
       <li class="list-group-item break-word">
         <span class="text-secondary">User Id:</span> 1
-        {{ item.userid }}
+        {{ item.appUserId }}
       </li>
       <li class="list-group-item break-word">
         <span class="text-secondary">Check Date:</span>
-        {{ item.end_time.slice(0, 10) }}
+        {{ item.endTime.slice(0, 10) }}
       </li>
       <li class="list-group-item break-word">
         <span class="text-secondary">Check Duration:</span>
-        {{ item.start_time.slice(11, 19) }}
-        {{ item.end_time.slice(11, 19) }}
+        {{ item.startTime.slice(11, 19) }}
+        {{ item.endTime.slice(11, 19) }}
       </li>
       <li class="list-group-item break-word">
         <span class="text-secondary">Request:</span>
@@ -42,7 +42,7 @@
     </ul>
     <br />
     <CAlert
-      v-if="item.resultcodeid == 0"
+      v-if="item.resultCode == 0"
       color="success"
       class="d-flex align-items-center gap-2 p-2 mt-2"
     >
@@ -55,7 +55,7 @@
       class="d-flex align-items-center gap-2 p-2 mt-2"
     >
       <CIcon :content="cilBurn" class="flex-shrink-0 me-2" />
-      <div>Exception: {{ item.exceptiondata }}</div>
+      <div>Exception: {{ item.exceptionData }}</div>
     </CAlert>
   </div>
 </template>

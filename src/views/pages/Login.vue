@@ -14,9 +14,9 @@
                       <CIcon icon="cil-user" />
                     </CInputGroupText>
                     <CFormInput
+                      autocomplete="on"
                       placeholder="Role"
-                      v-model="email"
-                      autocomplete="off"
+                      v-model="formData.username"
                     />
                   </CInputGroup>
                   <CInputGroup class="mb-4">
@@ -26,8 +26,7 @@
                     <CFormInput
                       type="password"
                       placeholder="Password"
-                      autocomplete="off"
-                      v-model="password"
+                      v-model="formData.password"
                     />
                   </CInputGroup>
                   <CRow>
@@ -48,15 +47,18 @@
 </template>
 
 <script>
-import router from '@/router'
+//import router from '@/router'
 import { mapActions, mapGetters } from 'vuex'
 export default {
   name: 'Login',
   setup() {},
   data() {
-    return {
-      email: '',
+    const formData = {
+      username: '',
       password: '',
+    }
+    return {
+      formData,
     }
   },
   computed: {
@@ -69,17 +71,15 @@ export default {
       actionLoginApi: 'loginApi',
     }),
     async login() {
-      console.log(this.email, this.password)
-      const payload = {
-        email: this.email,
-        password: this.password,
-      }
-      await this.actionLoginApi(payload)
-      if (this.getLoginApiStatus == 'success') {
-        router.push({ name: 'Main' })
-      } else {
-        alert('failed')
-      }
+      console.log(this.formData)
+      await this.actionLoginApi(this.formData)
+      console.log(this.getLoginApiStatus)
+
+      // if (this.getLoginApiStatus == 'success') {
+      //   router.push({ name: 'Main' })
+      // } else {
+      //   console.log('failed')
+      // }
     },
   },
 }

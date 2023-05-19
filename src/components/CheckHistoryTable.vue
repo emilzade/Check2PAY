@@ -17,28 +17,28 @@
       <CTableRow align="middle" v-for="item in data" :key="item.id">
         <CTableDataCell>
           <span style="width: 300px; overflow: hidden">
-            {{ item.serviceid }}
+            {{ item.gateServiceId }}
           </span>
         </CTableDataCell>
-        <CTableDataCell style="width: 500px; overflow: hidden">
+        <CTableDataCell style="width: 200px; overflow: hidden">
           <span style="width: 100px; overflow: hidden">
-            {{ item.name }}
+            {{ item.serviceName }}
           </span>
         </CTableDataCell>
         <CTableDataCell>
           <span style="width: 100px; overflow: hidden">
-            {{ item.start_time.slice(0, 10) }}
-            &nbsp;&nbsp;{{ item.start_time.slice(11, 16) }}
+            {{ item.startTime.slice(0, 10) }}
+            &nbsp;&nbsp;{{ item.startTime.slice(11, 16) }}
           </span>
         </CTableDataCell>
         <CTableDataCell>
           <span style="width: 60px; overflow: hidden">
-            12343{{ item.userid }}
+            {{ item.appUserId }}
           </span>
         </CTableDataCell>
         <CTableDataCell>
           <div
-            v-if="item.resultcodeid == 0"
+            v-if="item.resultCode == 0"
             style="width: 60px; overflow: hidden"
             class="bg-success rounded text-light m-auto"
           >
@@ -53,18 +53,8 @@
           </div>
         </CTableDataCell>
         <CTableDataCell>
-          <div
-            v-if="item.separate == 1"
-            style="width: 60px; overflow: hidden"
-            class="rounded m-auto text-light bg-warning"
-          >
-            <CIcon :content="icons.cilStream" />
-          </div>
-          <div v-else></div>
-        </CTableDataCell>
-        <CTableDataCell>
           <span style="width: 60px; overflow: hidden">
-            {{ item.partitionnumber }}
+            {{ item.partitionNumber }}
           </span>
         </CTableDataCell>
         <CTableDataCell>

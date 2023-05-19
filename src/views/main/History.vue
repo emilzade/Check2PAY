@@ -42,18 +42,27 @@
           class="input-custom bg-light border border-secondary rounded"
         />
       </CCol>
-      <CCol class="col-md-4 col-12 py-2">
-        <CFormLabel for="partitionNumber" class="text-secondary bg-light">
-          Status
-        </CFormLabel>
-        <CFormInput
-          id="status"
-          type="text"
-          placeholder="Status"
-          name="partitionNum"
-          v-model="formData.status"
-          class="input-custom bg-light border border-secondary rounded"
-        />
+      <CCol class="col-md-4 col-12 py-2 small">
+        <div class="d-flex justify-content-between my-2">
+          <div
+            class="d-flex flex-column align-items-center"
+            v-for="successType in successTypes"
+            v-bind:key="successType.id"
+          >
+            <CFormLabel :for="'successType' + successType.id" role="button"
+              ><small>{{ successType.name }}</small></CFormLabel
+            >
+            <CFormInput
+              class="form-check-input"
+              type="checkbox"
+              :id="'successType' + successType.id"
+              :name="'successType' + successType.id"
+              :value="successType.name"
+              :checked="successType.default"
+              @click="successType.checked = !successType.checked"
+            />
+          </div>
+        </div>
       </CCol>
       <CCol class="col-md-4 col-12 py-2"
         ><CFormLabel for="startDate" class="text-secondary"
@@ -99,7 +108,7 @@
             content: 'Download as excel',
             placement: 'top',
           }"
-          :data="dbData"
+          :data="dbData.data"
         >
           <CIcon :content="icons.cilDataTransferDown"></CIcon>
         </JsonExcel>
@@ -120,26 +129,27 @@
   </CForm>
   <CheckHistoryTable
     :icons="icons"
-    :data="sortedSearchResults.slice(0, 100)"
+    :data="sortedSearchResults"
     :thData="thData"
     @sort="sort"
     @getDetailedInfo="getDetailedHistory"
   ></CheckHistoryTable>
 
   <!--pagination start-->
-  <pagination
-    v-model="currentPage"
-    :records="totalElementCount"
-    :per-page="perPageElementCount"
-    @paginate="pageSelected"
-    :options="{ chunk: 8 }"
-  />
+  <div class="d-flex justify-content-center text-center pt-3">
+    <pagination
+      v-model="currentPage"
+      :records="dbData.totalCount"
+      :per-page="perPageElementCount"
+      @paginate="pageSelected"
+      :options="{ chunk: 8 }"
+    />
+  </div>
   <!--pagination end-->
 
   <CheckHistoryDetailedModal
     :detailedHistory="detailedHistory"
     :isActive="isDetailedHistoryModalActive"
-    :hasException="isCheckHistoryHasException"
     :icons="icons"
     @closeDetailedHistoryModal="closeDetailedHistoryModal"
   ></CheckHistoryDetailedModal>
@@ -172,22 +182,24 @@ export default {
   },
   name: 'History',
   data() {
-    const dbData = []
+    const dbData = {
+      data: [],
+      totalCount: 0,
+    }
     const thData = [
-      { id: 1, title: 'Service Id', sortBy: 'serviceid' },
-      { id: 1, title: 'Name', sortBy: 'name' },
-      { id: 2, title: 'Start Date', sortBy: 'start_time' },
-      { id: 3, title: 'User Id', sortBy: 'userid' },
-      { id: 6, title: 'Result', sortBy: 'result' },
-      { id: 6, title: 'Separate', sortBy: 'separate' },
-      { id: 6, title: 'Partition Nº', sortBy: 'partitionnumber' },
+      { id: 1, title: 'Service Id', sortBy: 'gateServiceId' },
+      { id: 1, title: 'Name', sortBy: 'serviceName' },
+      { id: 2, title: 'Start Date', sortBy: 'startTime' },
+      { id: 3, title: 'User Id', sortBy: 'appUserId' },
+      { id: 6, title: 'Result', sortBy: 'resultCode' },
+      { id: 6, title: 'Partition Nº', sortBy: 'partitionNumber' },
       { id: 7, title: 'Operations', sortBy: null },
     ]
     const formData = {
       serviceId: '',
       partitionNum: '',
       srv_name: '',
-      status: '',
+      status: [],
       from_date: this.getPreviousDay(
         new Date(new Date().toISOString().slice(0, 10)),
       )
@@ -195,14 +207,32 @@ export default {
         .slice(0, 10),
       to_date: new Date().toISOString().slice(0, 10),
     }
-    const totalElementCount = 101
     const perPageElementCount = 20
     const searchWarning = {
       isActive: false,
       data: null,
     }
+    const successTypes = [
+      {
+        id: 1,
+        name: 'Success',
+        value: '0',
+        checked: false,
+      },
+      {
+        id: 2,
+        name: 'OSMP',
+        value: '1',
+        checked: false,
+      },
+      {
+        id: 3,
+        name: 'Parameter',
+        value: '202',
+        checked: false,
+      },
+    ]
     const detailedHistory = {}
-    const isCheckHistoryHasException = ref(false)
     const isDetailedHistoryModalActive = ref(false)
     const icons = {
       cilInfo,
@@ -214,41 +244,8 @@ export default {
       cilStream,
     }
     const currentPage = 1
-    const currentSort = 'start_time'
+    const currentSort = 'startTime'
     const currentSortDir = 'desc'
-    /*
-    List<Service> services(int pageId = 1 , int perPageElementCount = 50 , obj obj)
-    return{
-      pageId: 2 ,
-      elementCount: 50 ,
-      totalItems: 1650 ,
-      items:[{...},{...},{...}]
-    }
-    List<Service> servicesMulti(int pageId = 1 , int perPageElementCount = 50 , obj obj){
-      return{
-        pageId: 2,
-        elementCount: 40,
-        totalItems: 123,
-        items:[{...},{...},{...}]
-      }
-    }
-
-    List<CheckRequestHistory> checkRequestHistories(int pageId = 1 , int perPageElementCount = 50)
-    return {
-      pageId: 2 ,
-      elementCount: 50 ,
-      totalItems: 7843 ,
-      items:[{...},{...},{...}]
-    }
-
-    List<CheckRequestHistory> checkRequestHistoriesMulti(int pageId = 1 , int perPageElementCount = 50 , obj obj)
-    return {
-      pageId: 2 ,
-      elementCount: 50 ,
-      totalItems: 7843 ,
-      items:[{...},{...},{...}]
-    }
-    */
     const isPageLoading = ref(false)
     return {
       icons,
@@ -260,19 +257,31 @@ export default {
       currentSort,
       currentSortDir,
       currentPage,
+      successTypes,
 
-      totalElementCount,
       perPageElementCount,
 
-      isCheckHistoryHasException,
       isDetailedHistoryModalActive,
       isPageLoading,
     }
   },
   computed: {
+    dynamicSearchQuery() {
+      return (offset) =>
+        `http://localhost:84/api/CheckRequest/CheckRequestHistories?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}${this.selectedStatus}&from_date=${this.formData.from_date}%2000%3A00&to_date=${this.formData.to_date}%2000%3A00&limit=${this.perPageElementCount}&offset=${offset}`
+    },
+    selectedStatus() {
+      var tempString = ''
+      for (var i = 0; i < this.successTypes.length; i++) {
+        if (this.successTypes[i].checked) {
+          tempString += '&status=' + this.successTypes[i].value
+        }
+      }
+      return tempString
+    },
     sortedSearchResults() {
       /*eslint-disable*/
-      return this.dbData.sort((a, b) => {
+      return this.dbData.data.sort((a, b) => {
         let modifier = 1
         if (this.currentSortDir === 'desc') modifier = -1
         if (a[this.currentSort] < b[this.currentSort]) return -1 * modifier
@@ -283,21 +292,24 @@ export default {
   },
   methods: {
     search: function () {
-      this.isPageLoading = true
       console.log(this.formData)
-      console.log(
-        `http://localhost:8081/api/CheckRequest/CheckRequestHistoriesMulti?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}&status=${this.formData.status}&from_date=${this.formData.from_date}&to_date=${this.formData.to_date}`,
-      )
-      fetch(
-        `http://localhost:8081/api/CheckRequest/CheckRequestHistoriesMulti?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}&status=${this.formData.status}&from_date=${this.formData.from_date}&to_date=${this.formData.to_date}`,
-      )
+      this.getDbData(0)
+    },
+    getDbData: function (offset) {
+      this.isPageLoading = true
+      console.log(this.dynamicSearchQuery(offset))
+      fetch(this.dynamicSearchQuery(offset))
         .then((response) => response.json())
         .then((data) => {
           this.dbData = data
-          this.createNewModel(this.dbData)
+          this.createNewModel(this.dbData.data)
           console.log(this.dbData)
           this.isPageLoading = false
         })
+    },
+    pageSelected: function (pageId) {
+      var offset = (pageId - 1) * this.perPageElementCount
+      this.getDbData(offset)
     },
     getPreviousDay: function (date = new Date()) {
       const previous = new Date(date.getTime())
@@ -307,15 +319,11 @@ export default {
     },
     getDetailedHistory: function (id) {
       this.isDetailedHistoryModalActive = true
-      this.detailedHistory = this.dbData.find((x) => x.id == id)
-      if (this.detailedHistory.exceptiondata) {
-        this.isCheckHistoryHasException = true
-      }
+      this.detailedHistory = this.dbData.data.find((x) => x.id == id)
       console.log(this.detailedHistory)
     },
     closeDetailedHistoryModal: function () {
       this.isDetailedHistoryModalActive = false
-      this.isCheckHistoryHasException = false
     },
     sort: function (sortDir) {
       //if sortDir == current sort, reverse
@@ -324,35 +332,18 @@ export default {
       }
       this.currentSort = sortDir
     },
-    getDbData: function () {
-      this.isPageLoading = true
-      fetch(
-        `http://localhost:8081/api/CheckRequest/CheckRequestHistoriesMulti?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}&status=${this.formData.status}&from_date=${this.formData.from_date}&to_date=${this.formData.to_date}`,
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          this.dbData = data
-          this.createNewModel(this.dbData)
-          console.log(this.dbData)
-          this.isPageLoading = false
-        })
-    },
-    pageSelected: function (pageId) {
-      console.log(pageId)
-      // this.db = this.dbData.slice(
-      //   (pageId - 1) * this.perPageElementCount,
-      //   (pageId - 1) * this.perPageElementCount + this.perPageElementCount,
-      // )
-    },
     createNewModel: function (data) {
-      this.dbData = data.map((obj) => ({
+      this.dbData.data = data.map((obj) => ({
         ...obj,
-        result: obj.resultcodeid == 0 ? 'success' : 'error',
+        result: obj.resultCode == 0 ? 'success' : 'error',
       }))
     },
   },
   beforeMount() {
-    this.getDbData()
+    this.getDbData(0)
+    // fetch('http://localhost:84/api/Services/GetServices?offset=0&limit=1500')
+    //   .then((response) => response.json())
+    //   .then((data) => (this.tempData = data.services))
   },
 }
 </script>

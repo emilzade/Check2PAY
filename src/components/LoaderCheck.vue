@@ -1,6 +1,6 @@
 <template>
-  <div v-if="isLoading" class="w-15">
-    <div class="check-loading border rounded p-0 m-0">
+  <div v-if="isLoading">
+    <div class="check-loading border rounded">
       <div
         class="check w-100 h-100 d-flex justify-content-center align-items-center"
       >

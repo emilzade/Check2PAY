@@ -1,6 +1,19 @@
 <template>
-  <CRow class="d-flex py-2 justify-content-end">
-    <CCol class="col-6 d-flex justify-content-end">
+  <CRow class="d-flex py-2 justify-content-between">
+    <CCol class="col-6 my-2 d-flex justify-content-start">
+      <CButtonGroup role="button">
+        <CButton color="info" variant="outline" @click="selectAllDataClick"
+          >Select All</CButton
+        >
+        <CButton
+          color="danger"
+          variant="outline"
+          @click="clearSelectedMultipleData"
+          >Clear</CButton
+        >
+      </CButtonGroup>
+    </CCol>
+    <CCol class="col-6 d-flex justify-content-end align-items-center">
       <CButtonGroup role="group" aria-label="Check Buttons">
         <CButton color="primary" variant="outline" @click="check"
           ><CIcon :content="icons.cilMediaPlay" role="button"></CIcon>Check
@@ -28,19 +41,6 @@
             <CFormInput class="w-75 m-auto mt-2" v-model="limitService" />
           </CDropdownMenu>
         </CDropdown>
-      </CButtonGroup>
-    </CCol>
-    <CCol class="col-6 my-2 d-flex justify-content-between">
-      <CButtonGroup role="button">
-        <CButton color="info" variant="outline" @click="selectAllDataClick"
-          >Select All</CButton
-        >
-        <CButton
-          color="danger"
-          variant="outline"
-          @click="clearSelectedMultipleData"
-          >Clear</CButton
-        >
       </CButtonGroup>
     </CCol>
   </CRow>
