@@ -1,5 +1,6 @@
 import axios from 'axios'
-//import jwtInterceptor from '../../shared/jwt.interceptor'
+import VueCookies from 'vue-cookies'
+//import jwtInterceptor from '../../shared/jwt.interceptor'z
 const state = () => ({
   loginApiStatus: '',
   userProfile: {
@@ -22,9 +23,71 @@ const getters = {
   getLogout(state) {
     return state.logOut
   },
+  getToken(state) {
+    return state.token
+  },
 }
 
 const actions = {
+  async loginApi({ commit }, data) {
+    console.log(data)
+    const configObject = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }
+
+    await fetch('http://localhost:84/api/Authenticate/login', configObject)
+      .then((response) => response.json())
+      .then(async (loginData) => {
+        console.log(loginData)
+
+        if (loginData.status == 200) {
+          commit('setLoginApiStatus', 'success')
+          localStorage.setItem('role', 'admin')
+          localStorage.setItem('isAuthenticated', true)
+          commit('setIsAuthenticated', true)
+
+          var slicedDate =
+            loginData.expiration.slice(0, 10) +
+            ' ' +
+            loginData.expiration.slice(11, 19)
+
+          var parsedDate = new Date(slicedDate)
+          var addedDate = parsedDate.setTime(
+            parsedDate.getTime() + 2 * 60 * 60 * 1000,
+          )
+          var ceiledDate = Math.ceil((addedDate - new Date()) / 1000)
+
+          VueCookies.set('token', loginData.token, `${ceiledDate}s`)
+          commit('setToken', loginData.token)
+
+          await fetch(
+            `http://localhost:84/api/User/GetUser?username=${data.username}`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-type': 'application/json;charset=UTF-8',
+                Authorization: `Bearer ${loginData.token}`,
+              },
+            },
+          )
+            .then(async (response) => await response.json())
+            .then((userData) => {
+              console.log(userData)
+              localStorage.setItem('user', JSON.stringify(userData.data[0]))
+              commit('setUserProfile', JSON.stringify(userData.data[0]))
+            })
+        } else {
+          commit('setLoginApiStatus', 'failed')
+          localStorage.setItem('role', '')
+          localStorage.setItem('isAuthenticated', false)
+          commit('setIsAuthenticated', false)
+          VueCookies.set('token', '', '')
+          commit('setToken', '')
+        }
+      })
+  },
   /*
   async loginApi({ commit }, payload) {
     const response = await axios
@@ -43,25 +106,25 @@ const actions = {
       commit('setLoginApiStatus', 'failed')
     }
   },*/
-  async loginApi({ commit }, data) {
-    const configObject = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    }
-    await fetch('http://localhost:84/api/Authenticate/login', configObject)
-      .then(async (response) => await response.json())
-      .then((data) => {
-        console.log(data)
-        if (data.status == 200) {
-          commit('setLoginApiStatus', 'success')
-          localStorage.setItem('isAuthenticated', 'true')
-        } else if (data.status == 401) {
-          commit('setLoginApiStatus', 'failed')
-          localStorage.setItem('isAuthenticated', 'false')
-        }
-      })
-  },
+  // async loginApi({ commit }, data) {
+  //   const configObject = {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify(data),
+  //   }
+  //   await fetch('http://localhost:84/api/Authenticate/login', configObject)
+  //     .then(async (response) => await response.json())
+  //     .then((data) => {
+  //       console.log(data)
+  //       if (data.status == 200) {
+  //         commit('setLoginApiStatus', 'success')
+  //         localStorage.setItem('isAuthenticated', 'true')
+  //       } else if (data.status == 401) {
+  //         commit('setLoginApiStatus', 'failed')
+  //         localStorage.setItem('isAuthenticated', 'false')
+  //       }
+  //     })
+  // },
 
   async userProfile({ commit }) {
     // const response = await jwtInterceptor
@@ -106,21 +169,18 @@ const actions = {
 }
 
 const mutations = {
+  setUserProfile(state, data) {
+    state.userProfile = data
+  },
   setLoginApiStatus(state, data) {
     state.loginApiStatus = data
   },
-
-  setUserProfile(state, data) {
-    const userProfile = {
-      id: data.id,
-      lastName: data.lastName,
-      firstName: data.firstName,
-      email: data.email,
-      phone: data.phone,
-    }
-    state.userProfile = userProfile
+  setIsAuthenticated(state, data) {
+    state.isAuthenticated = data
   },
-
+  setToken(state, data) {
+    state.token = data
+  },
   setLogout(state, payload) {
     state.logOut = payload
   },

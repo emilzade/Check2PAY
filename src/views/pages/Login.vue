@@ -15,7 +15,7 @@
                     </CInputGroupText>
                     <CFormInput
                       autocomplete="on"
-                      placeholder="Role"
+                      placeholder="Username"
                       v-model="formData.username"
                     />
                   </CInputGroup>
@@ -81,6 +81,9 @@ export default {
       //   console.log('failed')
       // }
     },
+  },
+  beforeMount() {
+    console.log(this.$store.state.prodApi)
   },
 }
 </script>

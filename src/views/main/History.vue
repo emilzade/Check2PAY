@@ -1,4 +1,13 @@
 <template>
+  <div class="d-flex align-items-center justify-content-between pb-1">
+    <router-link :to="{ name: 'Index' }">
+      <CButton color="secondary" variant="outline"
+        ><CIcon :content="icons.cilArrowLeft"
+      /></CButton>
+    </router-link>
+    <div class="display-5 text-center">Check History</div>
+    <div></div>
+  </div>
   <CForm>
     <CRow
       class="py-5 d-flex align-items-center justify-content-start w-75 m-auto"
@@ -13,7 +22,7 @@
           name="srv_name"
           type="text"
           v-model="formData.srv_name"
-          class="input-custom bg-light border border-secondary rounded"
+          class="input-custo border border-secondary rounded"
         />
       </CCol>
       <CCol class="col-md-4 col-12 py-2">
@@ -26,7 +35,7 @@
           type="text"
           placeholder="Service Id"
           v-model="formData.serviceId"
-          class="input-custom bg-light border border-secondary rounded"
+          class="input-custom border border-secondary rounded"
         />
       </CCol>
       <CCol class="col-md-4 col-12 py-2">
@@ -39,13 +48,13 @@
           placeholder="Partition Number"
           name="partitionNum"
           v-model="formData.partitionNum"
-          class="input-custom bg-light border border-secondary rounded"
+          class="input-custom border border-secondary rounded"
         />
       </CCol>
       <CCol class="col-md-4 col-12 py-2 small">
-        <div class="d-flex justify-content-between my-2">
+        <div class="d-flex justify-content-around my-2">
           <div
-            class="d-flex flex-column align-items-center"
+            class="d-flex flex-column align-items-center p-1 rounded"
             v-for="successType in successTypes"
             v-bind:key="successType.id"
           >
@@ -53,6 +62,7 @@
               ><small>{{ successType.name }}</small></CFormLabel
             >
             <CFormInput
+              style="accent-color: #e74c3c"
               class="form-check-input"
               type="checkbox"
               :id="'successType' + successType.id"
@@ -72,7 +82,7 @@
           type="date"
           name="from_date"
           v-model="formData.from_date"
-          class="bg-light text-dark"
+          class="text-dark"
         />
       </CCol>
       <CCol class="col-md-4 col-12 py-2"
@@ -82,7 +92,7 @@
           type="date"
           name="to_date"
           v-model="formData.to_date"
-          class="bg-light text-dark"
+          class="text-dark"
         />
       </CCol>
       <CCol
@@ -92,7 +102,7 @@
           class="d-flex align-items-center justify-content-end p-0 m-0 gap-2"
         >
           <input
-            class="w-25 bg-light text-secondary border rounded p-2"
+            class="w-25 text-secondary border rounded p-2"
             type="number"
             id="perPageElementCount"
             name="perPageElementCount"
@@ -102,14 +112,7 @@
             >Per Page Element Count</CFormLabel
           >
         </div>
-        <JsonExcel
-          class="btn btn-outline-success"
-          v-c-tooltip="{
-            content: 'Download as excel',
-            placement: 'top',
-          }"
-          :data="dbData.data"
-        >
+        <JsonExcel class="btn btn-outline-success" :data="dbData.data">
           <CIcon :content="icons.cilDataTransferDown"></CIcon>
         </JsonExcel>
         <CButton color="dark" variant="outline" @click="search" size="lg"
@@ -127,6 +130,7 @@
       </CAlert>
     </CRow>
   </CForm>
+
   <CheckHistoryTable
     :icons="icons"
     :data="sortedSearchResults"
@@ -162,6 +166,9 @@ import CheckHistoryDetailedModal from '@/components/CheckHistoryDetailedModal.vu
 import CheckHistoryTable from '@/components/CheckHistoryTable.vue'
 import LoaderFullPage from '@/components/LoaderFullPage.vue'
 
+import { computed } from 'vue'
+import { useStore } from 'vuex'
+
 import { ref } from 'vue'
 import {
   cilInfo,
@@ -171,6 +178,7 @@ import {
   cilBurn,
   cilDataTransferDown,
   cilStream,
+  cilArrowLeft,
 } from '@coreui/icons'
 export default {
   components: {
@@ -181,6 +189,12 @@ export default {
     LoaderFullPage,
   },
   name: 'History',
+  setup() {
+    const store = useStore()
+    return {
+      dynamicData: computed(() => store.state.searchHistoryItemByPartition),
+    }
+  },
   data() {
     const dbData = {
       data: [],
@@ -197,15 +211,22 @@ export default {
     ]
     const formData = {
       serviceId: '',
-      partitionNum: '',
+      partitionNum:
+        typeof this.dynamicData == 'object'
+          ? this.dynamicData.partitionNumber
+          : '',
       srv_name: '',
       status: [],
-      from_date: this.getPreviousDay(
-        new Date(new Date().toISOString().slice(0, 10)),
-      )
-        .toISOString()
-        .slice(0, 10),
-      to_date: new Date().toISOString().slice(0, 10),
+      from_date:
+        typeof this.dynamicData == 'object'
+          ? this.dynamicData.from_date
+          : this.getPreviousDay(new Date(new Date().toISOString().slice(0, 10)))
+              .toISOString()
+              .slice(0, 10),
+      to_date:
+        typeof this.dynamicData == 'object'
+          ? this.dynamicData.to_date
+          : new Date().toISOString().slice(0, 10),
     }
     const perPageElementCount = 20
     const searchWarning = {
@@ -218,18 +239,14 @@ export default {
         name: 'Success',
         value: '0',
         checked: false,
+        bg: 'border border-success',
       },
       {
         id: 2,
-        name: 'OSMP',
+        name: 'Error',
         value: '1',
         checked: false,
-      },
-      {
-        id: 3,
-        name: 'Parameter',
-        value: '202',
-        checked: false,
+        bg: 'border border-danger',
       },
     ]
     const detailedHistory = {}
@@ -242,6 +259,7 @@ export default {
       cilBurn,
       cilDataTransferDown,
       cilStream,
+      cilArrowLeft,
     }
     const currentPage = 1
     const currentSort = 'startTime'
@@ -268,7 +286,9 @@ export default {
   computed: {
     dynamicSearchQuery() {
       return (offset) =>
-        `http://localhost:84/api/CheckRequest/CheckRequestHistories?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}${this.selectedStatus}&from_date=${this.formData.from_date}%2000%3A00&to_date=${this.formData.to_date}%2000%3A00&limit=${this.perPageElementCount}&offset=${offset}`
+        typeof this.dynamicData == 'object'
+          ? `${this.$store.state.testApi}/api/CheckRequest/CheckRequestHistories?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.dynamicData.partitionNumber}${this.selectedStatus}&from_date=${this.dynamicData.from_date}%2000%3A00&to_date=${this.dynamicData.to_date}%2000%3A00&limit=${this.perPageElementCount}&offset=${offset}`
+          : `${this.$store.state.testApi}/api/CheckRequest/CheckRequestHistories?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}${this.selectedStatus}&from_date=${this.formData.from_date}%2000%3A00&to_date=${this.formData.to_date}%2000%3A00&limit=${this.perPageElementCount}&offset=${offset}`
     },
     selectedStatus() {
       var tempString = ''
@@ -306,7 +326,7 @@ export default {
           console.log(this.dbData)
           this.isPageLoading = false
         })
-    },
+    }, //username
     pageSelected: function (pageId) {
       var offset = (pageId - 1) * this.perPageElementCount
       this.getDbData(offset)
@@ -339,9 +359,14 @@ export default {
       }))
     },
   },
+  mounted() {
+    if (typeof this.dynamicData == 'object') {
+      this.getDbData(0)
+    }
+    console.log(this.dynamicData)
+  },
   beforeMount() {
-    this.getDbData(0)
-    // fetch('http://localhost:84/api/Services/GetServices?offset=0&limit=1500')
+    // fetch(`${this.$store.state.testApi}/api/Services/GetServices?offset=0&limit=1500`)
     //   .then((response) => response.json())
     //   .then((data) => (this.tempData = data.services))
   },

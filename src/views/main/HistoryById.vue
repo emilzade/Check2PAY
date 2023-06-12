@@ -1,4 +1,26 @@
 <template>
+  <div class="d-flex align-items-center justify-content-between pb-5">
+    <router-link :to="{ name: 'Index' }">
+      <CButton color="secondary" variant="outline"
+        ><CIcon :content="icons.cilArrowLeft"
+      /></CButton>
+    </router-link>
+    <div v-if="isPageLoading" class="display-5 text-center">Check History</div>
+    <div v-else class="display-5 text-center">
+      <div>Check History</div>
+      <Transition name="slide-fade">
+        <div
+          class="text-secondary"
+          v-if="serviceData.totalCount > 0 && !isPageLoading"
+        >
+          <span>{{ serviceData.data[0].gateServiceId }}</span>
+          -
+          <span>{{ serviceData.data[0].name }}</span>
+        </div>
+      </Transition>
+    </div>
+    <div></div>
+  </div>
   <CheckHistoryTable
     :icons="icons"
     :data="sortedSearchResults"
@@ -42,6 +64,7 @@ import {
   cilCheckCircle,
   cilBurn,
   cilStream,
+  cilArrowLeft,
 } from '@coreui/icons'
 export default {
   components: {
@@ -55,6 +78,10 @@ export default {
       totalCount: 0,
       data: [],
     }
+    const serviceData = {
+      totalCount: 0,
+      data: [],
+    }
     const thData = [
       { id: 1, title: 'Service Id', sortBy: 'gateServiceId' },
       { id: 1, title: 'Name', sortBy: 'serviceName' },
@@ -64,14 +91,14 @@ export default {
       { id: 6, title: 'Partition Nº', sortBy: 'partitionNumber' },
       { id: 7, title: 'Operations', sortBy: null },
     ]
-    const searchWarning = {
-      isActive: false,
-      data: null,
+    const errorData = {
+      hasError: false,
+      message: '',
     }
     const detailedHistory = {}
     const isCheckHistoryHasException = ref(false)
     const isDetailedHistoryModalActive = ref(false)
-    const isPageLoading = ref(false)
+    const isPageLoading = false
 
     const currentPage = 1
     const perPageElementCount = 20
@@ -85,27 +112,29 @@ export default {
       cilCheckCircle,
       cilBurn,
       cilStream,
+      cilArrowLeft,
     }
     return {
       icons,
 
       dbData,
+      serviceData,
       thData,
       currentSort,
       currentSortDir,
       currentPage,
       perPageElementCount,
-      searchWarning,
       detailedHistory,
       isCheckHistoryHasException,
       isDetailedHistoryModalActive,
       isPageLoading,
+      errorData,
     }
   },
   computed: {
     dynamicSearchQuery() {
       return (offset) =>
-        `https://localhost:5006/api/CheckRequest/CheckRequestHistories?serviceId=${this.$route.params.id}&from_date=2020-01-01%2000%3A00&to_date=2025-01-01%2000%3A00&offset=${offset}&limit=${this.perPageElementCount}`
+        `${this.$store.state.testApi}/api/CheckRequest/CheckRequestHistories?serviceId=${this.$route.params.id}&from_date=2020-01-01%2000%3A00&to_date=2025-01-01%2000%3A00&limit=${this.perPageElementCount}&offset=${offset}`
     },
     sortedSearchResults() {
       /*eslint-disable*/
@@ -141,18 +170,38 @@ export default {
     },
     getDbData: function (offset) {
       this.isPageLoading = true
-      console.log(this.dynamicSearchQuery(offset))
+      //console.log(this.dynamicSearchQuery(offset))
       fetch(this.dynamicSearchQuery(offset))
-        .then((response) => response.json())
+        .then((response) => {
+          if (response.ok) {
+            return response.json()
+          }
+          throw new Error('Something went wrong')
+        })
         .then((data) => {
           this.dbData = data
           console.log(this.dbData)
           this.isPageLoading = false
         })
+        .catch((err) => {
+          console.log(err)
+        })
+    },
+    getServiceData: function () {
+      fetch(
+        `${this.$store.state.testApi}/api/Services/GetServices?ids=${this.$route.params.id}&offset=0&limit=1`,
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          this.serviceData = data
+          console.log(data)
+        })
     },
   },
   beforeMount() {
     this.getDbData(0)
+    this.getServiceData()
+    console.log(this.$route.params.id)
   },
 }
 </script>

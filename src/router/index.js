@@ -1,7 +1,8 @@
 import { h, resolveComponent } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
-import store from '../store/index'
+//import store from '../store/index'
 import DefaultLayout from '@/layouts/DefaultLayout'
+import VueCookies from 'vue-cookies'
 
 const routes = [
   {
@@ -15,9 +16,9 @@ const routes = [
         name: 'Index',
         component: () => import('@/views/main/Index.vue'),
         meta: {
-          authRequired: 'false',
-          adminRequired: 'false',
-          sysRequired: 'false',
+          authRequired: false,
+          adminRequired: false,
+          sysRequired: false,
         },
       },
       {
@@ -30,9 +31,9 @@ const routes = [
         },
         redirect: '/main/index',
         meta: {
-          authRequired: 'false',
-          adminRequired: 'false',
-          sysRequired: 'false',
+          authRequired: false,
+          adminRequired: false,
+          sysRequired: false,
         },
         children: [
           {
@@ -40,9 +41,9 @@ const routes = [
             name: 'Index',
             component: () => import('@/views/main/Index.vue'),
             meta: {
-              authRequired: 'false',
-              adminRequired: 'false',
-              sysRequired: 'false',
+              authRequired: false,
+              adminRequired: false,
+              sysRequired: false,
             },
           },
           {
@@ -50,9 +51,9 @@ const routes = [
             name: 'History',
             component: () => import('../views/main/History.vue'),
             meta: {
-              authRequired: 'false',
-              adminRequired: 'false',
-              sysRequired: 'false',
+              authRequired: false,
+              adminRequired: false,
+              sysRequired: false,
             },
           },
           {
@@ -60,9 +61,9 @@ const routes = [
             name: 'HistoryById',
             component: () => import('../views/main/HistoryById.vue'),
             meta: {
-              authRequired: 'false',
-              adminRequired: 'false',
-              sysRequired: 'false',
+              authRequired: false,
+              adminRequired: false,
+              sysRequired: false,
             },
           },
           {
@@ -70,9 +71,9 @@ const routes = [
             name: 'Partition',
             component: () => import('../views/main/Partition.vue'),
             meta: {
-              authRequired: 'false',
-              adminRequired: 'false',
-              sysRequired: 'false',
+              authRequired: false,
+              adminRequired: false,
+              sysRequired: false,
             },
           },
           // {
@@ -92,9 +93,9 @@ const routes = [
         name: 'Unauthorized',
         component: () => import('../views/Unauthorized.vue'),
         meta: {
-          authRequired: 'false',
-          adminRequired: 'false',
-          sysRequired: 'false',
+          authRequired: false,
+          adminRequired: false,
+          sysRequired: false,
         },
       },
     ],
@@ -102,7 +103,7 @@ const routes = [
 
   {
     path: '/pages',
-    redirect: '/pages/404',
+    redirect: '/404',
     name: 'Pages',
     component: {
       render() {
@@ -110,44 +111,44 @@ const routes = [
       },
     },
     meta: {
-      authRequired: 'false',
-      adminRequired: 'false',
+      authRequired: false,
+      adminRequired: false,
     },
     children: [
       {
-        path: '/pages/404',
+        path: '/404',
         name: 'Page404',
         component: () => import('@/views/pages/Page404'),
         meta: {
-          authRequired: 'false',
-          adminRequired: 'false',
+          authRequired: false,
+          adminRequired: false,
         },
       },
       {
-        path: '/pages/500',
+        path: '/500',
         name: 'Page500',
         component: () => import('@/views/pages/Page500'),
         meta: {
-          authRequired: 'false',
-          adminRequired: 'false',
+          authRequired: false,
+          adminRequired: false,
         },
       },
       {
-        path: '/pages/login',
+        path: '/login',
         name: 'Login',
         component: () => import('@/views/pages/Login'),
         meta: {
-          authRequired: 'false',
-          adminRequired: 'false',
+          authRequired: false,
+          adminRequired: false,
         },
       },
       {
-        path: '/pages/register',
+        path: '/register',
         name: 'Register',
         component: () => import('@/views/pages/Register'),
         meta: {
-          authRequired: 'false',
-          adminRequired: 'false',
+          authRequired: false,
+          adminRequired: false,
         },
       },
     ],
@@ -168,10 +169,10 @@ router.beforeEach((to, from, next) => {
   console.log('authRequired', to.meta.authRequired)
   console.log('adminRequired', to.meta.adminRequired)
 
-  if (to.meta.authRequired === 'true') {
+  if (to.meta.authRequired === true) {
     const role = localStorage.getItem('role')
     if (role == 'user' || role == 'admin') {
-      if (to.meta.adminRequired === 'true') {
+      if (to.meta.adminRequired === true) {
         if (role == 'admin') {
           return next()
         } else {
@@ -195,18 +196,24 @@ router.beforeEach((to, from, next) => {
 */
 
 router.beforeEach(async (to, from, next) => {
-  let userProfile = store.getters['auth/getUserProfile']
-  let isAuthenticated = localStorage.getItem('isAuthenticated')
-  if (userProfile.id === 0 && isAuthenticated) {
-    await store.dispatch('auth/userProfile')
-    userProfile = store.getters['auth/getUserProfile']
-  }
+  const isAuthenticated = localStorage.getItem('isAuthenticated')
+  const token = VueCookies.get('token')
+  //const user = localStorage.getItem('user')
+  // var role = ''
+  // if (user != null) {
+  //   if (user.length > 0) {
+  //     role = JSON.parse(user).roleName
+  //   }
+  // }
 
-  if (to.meta.authRequired === 'true') {
-    if (userProfile.id === 0) {
-      return next({ path: '/pages/login' })
+  if (to.meta.authRequired === true) {
+    if (isAuthenticated && token != '') {
+      return next()
+    } else {
+      return next({ path: '/login' })
     }
+  } else {
+    return next()
   }
-  return next()
 })
 export default router

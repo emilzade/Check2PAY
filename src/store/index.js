@@ -5,6 +5,9 @@ export default createStore({
   state: {
     sidebarVisible: '',
     sidebarUnfoldable: true,
+    prodApi: 'http://localhost:84',
+    testApi: 'http://localhost:90',
+    searchHistoryItemByPartition: '',
   },
   mutations: {
     toggleSidebar(state) {
@@ -15,6 +18,9 @@ export default createStore({
     },
     updateSidebarVisible(state, payload) {
       state.sidebarVisible = payload.value
+    },
+    setSearchHistoryItemByPartition(state, data) {
+      state.searchHistoryItemByPartition = data
     },
   },
   actions: {

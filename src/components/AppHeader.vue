@@ -9,25 +9,24 @@
       </CHeaderBrand>
       <CHeaderNav class="d-none d-md-flex me-auto"> </CHeaderNav>
       <CHeaderNav>
-        <ul
-          class="navbar-nav me-auto mb-2 mb-lg-0"
-          v-if="getUserProfile.id == 0"
-        >
-          <li class="nav-item">
-            <router-link to="/pages/login" class="nav-link">Login</router-link>
-          </li>
-        </ul>
         <div
           class="d-flex gap-2 align-items-center"
-          v-if="getUserProfile.id !== 0"
+          v-if="isAuthenticated == true || getToken != null"
         >
           <div
             class="border border-primary user-select-none h-100 rounded d-flex px-1 align-items-center"
           >
             {{ getUserProfile.email }}
           </div>
-          <div class="btn btn-outline-danger" @click="logout()">Logout</div>
+          <div class="btn btn-outline-danger" @click="logOut()">Logout</div>
         </div>
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0" v-else>
+          <li class="nav-item">
+            <router-link :to="{ name: 'Login' }" class="nav-link"
+              >Login</router-link
+            >
+          </li>
+        </ul>
       </CHeaderNav>
     </CContainer>
     <CHeaderDivider />
@@ -38,7 +37,7 @@
 </template>
 
 <script>
-import { mapGetters, mapActions, mapMutations } from 'vuex'
+import { mapGetters, mapActions } from 'vuex'
 import AppBreadcrumb from './AppBreadcrumb'
 import { logo } from '@/assets/brand/logo'
 //import router from '@/router'
@@ -53,33 +52,24 @@ export default {
     }
   },
   computed: {
+    isAuthenticated: function () {
+      return this.$store.state.auth.isAuthenticated
+    },
     ...mapGetters('auth', {
+      getToken: 'getToken',
       getUserProfile: 'getUserProfile',
-      getLogout: 'getLogout',
     }),
+    userProfile: function () {
+      return this.getUserProfile
+    },
   },
   methods: {
     ...mapActions('auth', {
       userLogout: 'userLogout',
     }),
-    ...mapMutations('auth', {
-      setLogout: 'setLogout',
-      setUserProfile: 'setUserProfile',
-    }),
-    async logout() {
+    logOut: async function () {
       await this.userLogout()
-      if (this.getLogout) {
-        const resetUser = {
-          id: 0,
-          lastName: '',
-          firstName: '',
-          email: '',
-          phone: '',
-        }
-        this.setUserProfile(resetUser)
-        this.setLogout(false)
-        this.$router.push({ name: 'Login' })
-      }
+      location.reload()
     },
   },
   beforeMount() {

@@ -209,7 +209,7 @@
                 'check-MultipleInfoActive': item.isShowInfoActive,
               }"
             >
-              <div class="bg-light" style="z-index: 9999">
+              <div class="bg-light">
                 <CIcon
                   @click="closeCheckInfo"
                   :content="icons.cilArrowLeft"

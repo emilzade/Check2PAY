@@ -13,20 +13,20 @@
           name="userId"
           type="text"
           v-model="formData.userId"
-          class="input-custom bg-light border border-secondary rounded"
+          class="input-custom border border-secondary rounded"
         />
       </CCol>
       <CCol class="col-md-4 col-12 py-2">
-        <!-- <CFormLabel for="serviceId" class="text-secondary bg-light">
-            Service Id
+        <!-- <CFormLabel for="name" class="text-secondary bg-light">
+            Name
           </CFormLabel> -->
         <CFormInput
-          id="userName"
-          name="userName"
+          id="userId"
+          placeholder="User Id"
+          name="userId"
           type="text"
-          placeholder="User Name"
-          v-model="formData.userName"
-          class="input-custom bg-light border border-secondary rounded"
+          v-model="formData.userId"
+          class="input-custom border border-secondary rounded"
         />
       </CCol>
       <CCol class="col-md-4 col-12 py-2">
@@ -34,12 +34,12 @@
             Partition Number
           </CFormLabel> -->
         <CFormInput
-          id="partitionCount"
+          id="partitionId"
           type="text"
-          placeholder="Partition Count"
+          placeholder="Partition Id"
           name="partitionNum"
-          v-model="formData.partitionCount"
-          class="input-custom bg-light border border-secondary rounded"
+          v-model="formData.partitionUd"
+          class="input-custom border border-secondary rounded"
         />
       </CCol>
       <CCol class="col-md-4 col-12 py-2"
@@ -50,7 +50,7 @@
           type="date"
           name="from_date"
           v-model="formData.from_date"
-          class="bg-light text-dark"
+          class="text-dark"
         />
       </CCol>
       <CCol class="col-md-4 col-12 py-2"
@@ -60,7 +60,7 @@
           type="date"
           name="to_date"
           v-model="formData.to_date"
-          class="bg-light text-dark"
+          class="text-dark"
         />
       </CCol>
       <CCol
@@ -70,7 +70,7 @@
           class="d-flex align-items-center justify-content-end p-0 m-0 gap-2"
         >
           <input
-            class="w-25 bg-light text-secondary border rounded p-2"
+            class="w-25 text-secondary border rounded p-2"
             type="number"
             id="perPageElementCount"
             name="perPageElementCount"
@@ -86,7 +86,7 @@
             content: 'Download as excel',
             placement: 'top',
           }"
-          :data="dbData"
+          :data="dbData.data"
         >
           <CIcon :content="icons.cilDataTransferDown"></CIcon>
         </JsonExcel>
@@ -105,20 +105,73 @@
       </CAlert>
     </CRow>
   </CForm>
-  <CheckHistoryTable
-    :icons="icons"
-    :data="sortedSearchResults.slice(0, 100)"
-    :thData="thData"
-    :operations="['sendPartitionId']"
-    @sort="sort"
-    @getDetailedInfo="getDetailedHistory"
-  ></CheckHistoryTable>
+  <CTable responsive striped small hover class="text-center">
+    <CTableHead>
+      <CTableRow>
+        <CTableHeaderCell
+          class="user-select-none"
+          v-for="(item, index) in thData"
+          :key="index"
+          role="button"
+          scope="col"
+          @click="sort(item.sortBy)"
+          >{{ item.title }}</CTableHeaderCell
+        >
+      </CTableRow>
+    </CTableHead>
+    <CTableBody align="middle" v-for="item in dbData.data" :key="item.id">
+      <CTableRow>
+        <CTableDataCell style="width: 200px; overflow: hidden">
+          <span style="width: 100px; overflow: hidden">
+            {{ item.appUserId }}
+          </span>
+        </CTableDataCell>
+        <CTableDataCell style="width: 200px; overflow: hidden">
+          <span style="width: 100px; overflow: hidden">
+            {{ item.partitionNumber }}
+          </span>
+        </CTableDataCell>
+        <CTableDataCell style="width: 200px; overflow: hidden">
+          <span
+            class="bg-secondary rounded px-3 text-light"
+            style="width: 100px; overflow: hidden"
+          >
+            {{ item.historyCount }}
+          </span>
+        </CTableDataCell>
+        <CTableDataCell style="width: 200px; overflow: hidden">
+          <span
+            class="bg-success rounded px-3 text-light"
+            style="width: 100px; overflow: hidden"
+          >
+            {{ item.successCount }}
+          </span>
+        </CTableDataCell>
+        <CTableDataCell style="width: 200px; overflow: hidden">
+          <span
+            class="bg-danger rounded px-3 text-light"
+            style="width: 100px; overflow: hidden"
+          >
+            {{ item.errorCount }}
+          </span>
+        </CTableDataCell>
+        <CTableDataCell style="width: 200px; overflow: hidden">
+          <span
+            @click="PassQueryToHistorySearch(item)"
+            style="width: 100px; overflow: hidden"
+          >
+            <CIcon class="text-success" :content="icons.cilExternalLink" />
+          </span>
+        </CTableDataCell>
+      </CTableRow>
+    </CTableBody>
+  </CTable>
 
   <!--pagination start-->
   <div class="d-flex justify-content-center">
     <pagination
       v-model="currentPage"
-      :records="totalElementCount"
+      :records="dbData.totalCount"
       :per-page="perPageElementCount"
       @paginate="pageSelected"
       :options="{ chunk: 8 }"
@@ -130,7 +183,6 @@
 <script>
 import JsonExcel from 'vue-json-excel3'
 import Pagination from 'v-pagination-3'
-import CheckHistoryTable from '@/components/CheckHistoryTable.vue'
 import LoaderFullPage from '@/components/LoaderFullPage.vue'
 
 import { ref } from 'vue'
@@ -142,27 +194,31 @@ import {
   cilBurn,
   cilDataTransferDown,
   cilStream,
+  cilExternalLink,
 } from '@coreui/icons'
 export default {
   components: {
     JsonExcel,
     Pagination,
-    CheckHistoryTable,
     LoaderFullPage,
   },
   name: 'History',
   data() {
-    const dbData = []
+    const dbData = {
+      data: [],
+      totalCount: 0,
+    }
     const thData = [
       { id: 1, title: 'User Id', sortBy: 'userid' },
-      { id: 2, title: 'User Name', sortBy: 'username' },
-      { id: 3, title: 'Partition Count', sortBy: 'partitioncount' },
+      { id: 3, title: 'Partition Number', sortBy: 'partitionNumber' },
+      { id: 2, title: 'History Count', sortBy: 'historyCount' },
+      { id: 2, title: 'Success Count', sortBy: 'successCount' },
+      { id: 2, title: 'Error Count', sortBy: 'errorCount' },
       { id: 4, title: 'Operations', sortBy: null },
     ]
     const formData = {
       userId: '',
-      userName: '',
-      partitionCount: '',
+      partitionId: '',
       status: '',
       from_date: this.getPreviousDay(
         new Date(new Date().toISOString().slice(0, 10)),
@@ -188,6 +244,7 @@ export default {
       cilBurn,
       cilDataTransferDown,
       cilStream,
+      cilExternalLink,
     }
     const currentPage = 1
     const currentSort = 'startTime'
@@ -213,34 +270,31 @@ export default {
     }
   },
   computed: {
-    sortedSearchResults() {
-      /*eslint-disable*/
-      return this.dbData.sort((a, b) => {
-        let modifier = 1
-        if (this.currentSortDir === 'desc') modifier = -1
-        if (a[this.currentSort] < b[this.currentSort]) return -1 * modifier
-        if (a[this.currentSort] > b[this.currentSort]) return 1 * modifier
-        return 0
-      })
+    dynamicSearchQuery() {
+      return (offset) =>
+        `${this.$store.state.testApi}/api/Services/GetPartitionsCount?offset=${offset}&limit=${this.perPageElementCount}&partitionId=2&userId=${this.formData.userId}&startDate=${this.formData.from_date}%2000%3A00&endDate=${this.formData.to_date}%2000%3A00`
     },
   },
   methods: {
     search: function () {
+      this.getDbData(0)
+    },
+    getDbData: function (offset) {
       this.isPageLoading = true
       console.log(this.formData)
-      console.log(
-        `http://localhost:84/api/CheckRequest/CheckRequestHistoriesMulti/?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}&status=${this.formData.status}&from_date=${this.formData.from_date}&to_date=${this.formData.to_date}`,
-      )
-      fetch(
-        `http://localhost:84/api/CheckRequest/CheckRequestHistoriesMulti/?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}&status=${this.formData.status}&from_date=${this.formData.from_date}&to_date=${this.formData.to_date}`,
-      )
+      console.log(this.dynamicSearchQuery(offset))
+      fetch(this.dynamicSearchQuery(offset))
         .then((response) => response.json())
         .then((data) => {
           this.dbData = data
-          this.createNewModel(this.dbData)
-          console.log(this.dbData)
+          //this.createNewModel(this.dbData)
+          console.log(data)
           this.isPageLoading = false
         })
+    },
+    pageSelected: function (pageId) {
+      var offset = (pageId - 1) * this.perPageElementCount
+      this.getDbData(offset)
     },
     getPreviousDay: function (date = new Date()) {
       const previous = new Date(date.getTime())
@@ -248,17 +302,19 @@ export default {
 
       return previous
     },
-    getDetailedHistory: function (id) {
-      this.isDetailedHistoryModalActive = true
-      this.detailedHistory = this.dbData.find((x) => x.id == id)
-      if (this.detailedHistory.exceptiondata) {
-        this.isCheckHistoryHasException = true
+    PassQueryToHistorySearch: function (item) {
+      var newObject = {
+        partitionNumber: item.partitionNumber,
+        appUserId: item.appUserId,
+        from_date: this.formData.from_date,
+        to_date: this.formData.to_date,
       }
-      console.log(this.detailedHistory)
-    },
-    closeDetailedHistoryModal: function () {
-      this.isDetailedHistoryModalActive = false
-      this.isCheckHistoryHasException = false
+      console.log(newObject)
+      this.$store.commit('setSearchHistoryItemByPartition', newObject)
+
+      this.$router.push({
+        name: 'History',
+      })
     },
     sort: function (sortDir) {
       //if sortDir == current sort, reverse
@@ -266,32 +322,6 @@ export default {
         this.currentSortDir = this.currentSortDir === 'asc' ? 'desc' : 'asc'
       }
       this.currentSort = sortDir
-    },
-    getDbData: function () {
-      this.isPageLoading = true
-      fetch(
-        `http://localhost:84/api/CheckRequest/CheckRequestHistoriesMulti/?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.formData.partitionNum}&status=${this.formData.status}&from_date=${this.formData.from_date}&to_date=${this.formData.to_date}`,
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          this.dbData = data
-          this.createNewModel(this.dbData)
-          console.log(this.dbData)
-          this.isPageLoading = false
-        })
-    },
-    pageSelected: function (pageId) {
-      console.log(pageId)
-      // this.db = this.dbData.slice(
-      //   (pageId - 1) * this.perPageElementCount,
-      //   (pageId - 1) * this.perPageElementCount + this.perPageElementCount,
-      // )
-    },
-    createNewModel: function (data) {
-      this.dbData = data.map((obj) => ({
-        ...obj,
-        result: obj.resultCode == 0 ? 'success' : 'error',
-      }))
     },
   },
   beforeMount() {},

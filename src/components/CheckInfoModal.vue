@@ -13,7 +13,7 @@
       </li>
       <li class="list-group-item break-word">
         <span class="text-secondary">Service Name:</span>
-        {{ item.name }}
+        {{ item.serviceName }}
       </li>
       <li class="list-group-item break-word">
         <span class="text-secondary">User Id:</span> 1
@@ -35,9 +35,9 @@
       <li class="list-group-item break-word">
         <span class="text-secondary">Response:</span>
         <br />
-        <code style="background-color: #e9e9e9" class="d-block p-3 rounded">
+        <p class="d-block rounded">
           {{ item.response }}
-        </code>
+        </p>
       </li>
     </ul>
     <br />

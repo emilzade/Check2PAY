@@ -23,6 +23,7 @@
       <CFormInput
         v-model="filterForm.Name"
         id="name"
+        @keyup="filterElements"
         type="text"
         placeholder="Filter by Name"
         class="w-100 h-100"
@@ -84,7 +85,7 @@
       </CTableRow>
     </CTableHead>
     <CTableBody>
-      <CTableRow align="middle" v-for="item in filteredElements" :key="item.id">
+      <CTableRow align="middle" v-for="item in dbData.data" :key="item.id">
         <CTableDataCell class="w-15 position-relative">
           <img
             v-if="item.topservicesid == 1"
@@ -348,7 +349,7 @@ export default {
     const nestedDbGroups = { servicegroupid: 0, name: 'root', children: [] }
     const checkAllData = []
     const selectedTableData = []
-    const selectedGroup = ref()
+    const selectedGroup = ref(null)
     const filterForm = ref({
       Name: '',
       GateServiceId: '',
@@ -465,8 +466,32 @@ export default {
     }
   },
   computed: {
-    filteredElements: function () {
-      return this.filterElementsByName(this.sortedSearchResults)
+    dynamicSearchQuery() {
+      return (offset) =>
+        `${this.$store.state.testApi}/api/Services/GetServices?offset=${offset}${this.filteredIds}${this.filteredServiceName}${this.filteredGroup}&limit=${this.perPageElementCount}`
+    },
+    filteredIds() {
+      return this.filterForm.GateServiceId.length > 0
+        ? `&ids=${this.filterForm.GateServiceId.split('')
+            .join('')
+            .substring(
+              0,
+              this.removeSpaces(this.filterForm.GateServiceId.split('')),
+            )
+            .split(',')
+            .filter((v) => v != '')
+            .join('&ids=')}`
+        : ''
+    },
+    filteredServiceName() {
+      return this.filterForm.Name.length > 0
+        ? `&serviceName=${this.filterForm.Name}`
+        : ''
+    },
+    filteredGroup() {
+      return this.selectedGroup != null
+        ? `&groupId=${this.selectedGroup.id}`
+        : ''
     },
     sortedSearchResults() {
       /*eslint-disable*/
@@ -482,8 +507,28 @@ export default {
       selectedTableData.length === 0,
   },
   methods: {
+    getDbData: function (offset) {
+      console.log(this.dynamicSearchQuery(offset))
+      fetch(this.dynamicSearchQuery(offset), store.dispatch('fetchGetObject'))
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data)
+          this.dbData = data
+          this.dbData.data = this.createNewModelArray(data.data)
+          this.isPageLoading = false
+        })
+    },
+    pageSelected: function (pageId) {
+      var offset = (pageId - 1) * this.perPageElementCount
+      this.getDbData(offset)
+    },
+    filterElements: function () {
+      this.getDbData(0)
+    },
     GetCheckAllDataAndCheck: function () {
-      fetch('http://localhost:84/api/Services/GetAllSimplifiedServices')
+      fetch(
+        `${this.$store.state.testApi}/api/Services/GetAllSimplifiedServices`,
+      )
         .then((response) => response.json())
         .then((data) => this.checkAll(data))
     },
@@ -496,7 +541,7 @@ export default {
       this.currentlyCheckingElement.checkedElementStatus.error = false
       this.currentlyCheckingElement.isLoading = true
       await fetch(
-        `http://localhost:84/api/checkRequest/SingleCheck?PRV_ID=${gateServiceId}&userId=bcd4`,
+        `${this.$store.state.testApi}/api/checkRequest/SingleCheck?PRV_ID=${gateServiceId}&userId=bcd4`,
         {
           method: 'GET',
           headers: {
@@ -570,7 +615,7 @@ export default {
         }
         this.checkAllData.push(tempData)
         await fetch(
-          `http://localhost:84/api/checkRequest/singlecheck?PRV_ID=${payload[i].gateServiceId}&userId=bcd4`,
+          `${this.$store.state.testApi}/api/checkRequest/singlecheck?PRV_ID=${payload[i].gateServiceId}&userId=bcd4`,
           {
             method: 'GET',
             headers: {
@@ -637,7 +682,7 @@ export default {
     //   var counter = 0
     //   var checkAllInterval = setInterval(async () => {
     //     fetch(
-    //       `http://localhost:84/api/checkRequest/singlecheck?PRV_ID=${this.dbData[counter].gateServiceId}`,
+    //       `this.$store.state.testApi/api/checkRequest/singlecheck?PRV_ID=${this.dbData[counter].gateServiceId}`,
     //       {
     //         method: 'GET',
     //         headers: {
@@ -705,7 +750,7 @@ export default {
         }
         for (let i = 0; i < this.selectedTableData.length; i++) {
           await fetch(
-            `http://localhost:84/api/checkRequest/singleCheck?PRV_ID=${this.selectedTableData[i].gateServiceId}&userId=bcd4`,
+            `${this.$store.state.testApi}/api/checkRequest/singleCheck?PRV_ID=${this.selectedTableData[i].gateServiceId}&userId=bcd4`,
             {
               method: 'GET',
               headers: {
@@ -742,10 +787,10 @@ export default {
     },
     checkTopServices: function (limit) {
       fetch(
-        `http://localhost:84/api/Services/GetServices?offset=0&limit=${limit}`,
+        `${this.$store.state.testApi}/api/Services/GetServices?offset=0&limit=${limit}`,
       )
         .then((response) => response.json())
-        .then((data) => this.checkAll(this.createNewModelArray(data.services)))
+        .then((data) => this.checkAll(this.createNewModelArray(data.data)))
     },
     showCheckInfo: function (id, modalName) {
       console.log(id)
@@ -779,12 +824,15 @@ export default {
     getParameterList: function (id) {
       this.isParameterLoading = true
       this.isSettingsModalActive = true
-      fetch(`http://localhost:84/api/services/getParametersList/${id}`, {
-        method: 'GET',
-        headers: {
-          'Content-type': 'application/json; charset=UTF-8',
+      fetch(
+        `${this.$store.state.testApi}/api/services/getParametersList/${id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-type': 'application/json; charset=UTF-8',
+          },
         },
-      })
+      )
         .then((response) => response.json())
         .then((data) => {
           this.parameterListOfElement.Id = id
@@ -809,7 +857,10 @@ export default {
           'Content-type': 'application/json',
         },
       }
-      fetch('http://localhost:84/api/Services/UpdateParameter', configObject)
+      fetch(
+        `${this.$store.state.testApi}/api/Services/UpdateParameter`,
+        configObject,
+      )
         .then((response) => response.json())
         .then((data) => {
           if (data) {
@@ -839,7 +890,10 @@ export default {
         },
         body: JSON.stringify([reqObject]),
       }
-      fetch(`http://localhost:84/api/Services/AddParameter`, configObject)
+      fetch(
+        `${this.$store.state.testApi}/api/Services/AddParameter`,
+        configObject,
+      )
         .then((response) => response.json())
         .then((data) => {
           console.log(data)
@@ -861,7 +915,9 @@ export default {
     removeParameter: function (serviceId, parameterId) {
       this.isParameterInputFocused = false
 
-      fetch(`http://localhost:84/api/Services/RemoveParameter/${parameterId}`)
+      fetch(
+        `${this.$store.state.testApi}/api/Services/RemoveParameter/${parameterId}`,
+      )
         .then((response) => response.json())
         .then((data) => {
           console.log(data)
@@ -951,84 +1007,12 @@ export default {
         )
       }
     },
-    filterElements: function () {
-      var string = this.filterForm.GateServiceId.split('')
-      var asd = this.removeSpaces(string)
-      var stringWithoutSpace = string.join('').substring(0, asd)
-      this.filteredIdArr = stringWithoutSpace.split(',')
-      this.filteredIdArr = this.filteredIdArr.filter((v) => v != '')
-      //console.log(strArr)
-      //strArr = strArr.map(this.toNumber)
 
-      // return dbData.filter((value) =>
-      //   strArr.some((x) => value.gateServiceId.toString().includes(x)),
-      // )
-
-      console.log(this.checkFilter())
-      fetch(this.checkFilter(), store.dispatch('fetchGetObject'))
-        .then((response) => response.json())
-        .then((data) => {
-          console.log(data)
-          this.dbData = data
-          this.dbData.data = this.createNewModelArray(data.data)
-          this.isPageLoading = false
-        })
-      // if (this.filterForm.GateServiceId == '') {
-      //   return dbData
-      // } else {
-      //   return dbData.filter((element) => {
-      //     return strArr.some((id) => {
-      //       return element.gateServiceId.toString().includes(id)
-      //     })
-      //   })
-      // }
-
-      // return dbData.filter((n) =>
-      //   n.gateServiceId.toString().includes(this.filterForm.GateServiceId),
-      // )
-    },
     filterElementsByName: function (dbData) {
       //contains
       return dbData.filter((n) =>
         n.name.toLowerCase().includes(this.filterForm.Name.toLowerCase()),
       )
-    },
-    checkFilter(offset) {
-      if (typeof offset == 'undefined') offset = 0
-      if (
-        this.filterForm.GateServiceId != '' &&
-        this.selectedGroup != null &&
-        this.selectedGroup != null
-      ) {
-        var fetchUrl = `http://localhost:84/api/Services/GetServices?ids=${this.filteredIdArr.join(
-          '&ids=',
-        )}&groupId=${this.selectedGroup.id}&offset=${offset}&limit=${
-          this.perPageElementCount
-        }`
-        return fetchUrl
-      } else if (
-        this.filterForm.GateServiceId != '' &&
-        (this.selectedGroup == null || this.selectedGroup == null)
-      ) {
-        var fetchUrl = `http://localhost:84/api/Services/GetServices?ids=${this.filteredIdArr.join(
-          '&ids=',
-        )}&offset=${offset}&limit=${this.perPageElementCount}`
-        return fetchUrl
-      } else if (
-        this.filterForm.GateServiceId == '' &&
-        this.selectedGroup != null &&
-        this.selectedGroup != null
-      ) {
-        var fetchUrl = `http://localhost:84/api/Services/GetServices?groupId=${this.selectedGroup.id}&offset=${offset}&limit=${this.perPageElementCount}`
-        return fetchUrl
-      } else if (
-        this.filterForm.GateServiceId == '' &&
-        this.selectedGroup == null &&
-        this.selectedGroup == null
-      ) {
-        var fetchUrl = `http://localhost:84/api/Services/GetServices?offset=${offset}&limit=${this.perPageElementCount}`
-        return fetchUrl
-      }
     },
     filterSelectedGroup: function (data) {
       console.log(data)
@@ -1049,28 +1033,7 @@ export default {
         value: null,
       }
     },
-    pageSelected: function (pageId) {
-      // this.db = this.dbData.slice(
-      //   (pageId - 1) * this.perPageElementCount,
-      //   (pageId - 1) * this.perPageElementCount + this.perPageElementCount,
-      // )
-      this.isPageLoading = true
-      var offset = (pageId - 1) * this.perPageElementCount
-      console.log(this.checkFilter(offset))
-      fetch(this.checkFilter(offset), store.dispatch('fetchGetObject'))
-        .then((response) => response.json())
-        .then((data) => {
-          console.log(data)
-          this.dbData = data.services
-          this.totalElementCount = data.totalCount
-          this.dbData = this.createNewModelArray(data.services)
-          this.isPageLoading = false
-        })
-      console.log(
-        (pageId - 1) * this.perPageElementCount,
-        (pageId - 1) * this.perPageElementCount + this.perPageElementCount,
-      )
-    },
+
     clearSelectedMultipleData: function () {
       this.selectedTableData = []
       this.isSelectedAll = false
@@ -1133,21 +1096,9 @@ export default {
   },
   beforeMount() {
     this.isPageLoading = true
-    console.log(
-      `http://localhost:84/api/Services/GetServices?offset=0&limit=${this.perPageElementCount}`,
-    )
-    fetch(
-      `http://localhost:84/api/Services/GetServices?offset=0&limit=${this.perPageElementCount}`,
-      store.dispatch('fetchGetObject'),
-    )
-      .then((response) => response.json())
-      .then((data) => {
-        this.dbData = data
-        this.dbData.data = this.createNewModelArray(data.data)
-        console.log(data)
-        this.isPageLoading = false
-      })
-    fetch('http://localhost:84/api/Services/GetGroups')
+    console.log(this.dynamicSearchQuery(0))
+    this.getDbData(0)
+    fetch(`${this.$store.state.testApi}/api/Services/GetGroups`)
       .then((response) => response.json())
       .then((data) => {
         console.log(data)
@@ -1173,7 +1124,7 @@ export default {
         // buildTree(this.dbGroups)
         // console.log(this.nestedDbGroups)
       })
-    // fetch('http://localhost:84/api/services/getgroups', {
+    // fetch('this.$store.state.testApi/api/services/getgroups', {
     //   method: 'Get',
     //   headers: {
     //     'Content-type': 'application/json;charset=UTF-8',

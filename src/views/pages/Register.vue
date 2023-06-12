@@ -107,7 +107,7 @@ export default {
           body: JSON.stringify(this.formData),
         }
         fetch(
-          'http://localhost:84/api/Authenticate/register',
+          `${this.$store.state.testApi}/api/Authenticate/register`,
           configObject,
         ).then((response) => response.json().then((data) => console.log(data)))
       }

@@ -44,28 +44,28 @@ export default [
   {
     component: 'CNavGroup',
     name: 'Pages',
-    to: '/pages',
+    to: '/',
     icon: 'cil-star',
     items: [
       {
         component: 'CNavItem',
         name: 'Login',
-        to: '/pages/login',
+        to: '/login',
       },
       {
         component: 'CNavItem',
         name: 'Register',
-        to: '/pages/register',
+        to: '/register',
       },
       {
         component: 'CNavItem',
         name: 'Error 404',
-        to: '/pages/404',
+        to: '/404',
       },
       {
         component: 'CNavItem',
         name: 'Error 500',
-        to: '/pages/500',
+        to: '/500',
       },
     ],
   },
