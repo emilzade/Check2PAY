@@ -30,14 +30,22 @@
       </li>
       <li class="list-group-item break-word">
         <span class="text-secondary">Request:</span>
-        <p class="overflow-auto">{{ item.request }}</p>
+        <div class="d-flex justify-content-between align-items-center gap-2">
+          <div class="overflow-auto">{{ item.request }}</div>
+          <div @click="copyToClipboard(item.request)" class="btn btn-light">
+            <CIcon :content="cilCopy" />
+          </div>
+        </div>
       </li>
       <li class="list-group-item break-word">
         <span class="text-secondary">Response:</span>
         <br />
-        <p class="d-block rounded">
-          {{ item.response }}
-        </p>
+        <div class="d-flex justify-content-between align-items-center gap-2">
+          <div class="overflow-auto">{{ item.response }}</div>
+          <div @click="copyToClipboard(item.response)" class="btn btn-light">
+            <CIcon :content="cilCopy" />
+          </div>
+        </div>
       </li>
     </ul>
     <br />
@@ -73,7 +81,7 @@
 }
 </style>
 <script>
-import { cilBurn, cilCheckCircle } from '@coreui/icons'
+import { cilBurn, cilCheckCircle, cilCopy } from '@coreui/icons'
 export default {
   name: 'CheckInfoModal',
   props: ['item'],
@@ -81,7 +89,13 @@ export default {
     return {
       cilBurn,
       cilCheckCircle,
+      cilCopy,
     }
+  },
+  methods: {
+    copyToClipboard(message) {
+      navigator.clipboard.writeText(message)
+    },
   },
   mounted() {},
 }

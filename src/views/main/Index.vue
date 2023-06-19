@@ -1,12 +1,12 @@
 <template>
   <CRow class="w-75 m-auto d-flex align-items-center">
-    <CCol class="col-md-4 col-12 m-auto py-2 position-relative">
+    <CCol class="col-md-4 col-12 m-auto py-1 position-relative">
       <CFormInput
         v-model="filterForm.GateServiceId"
         id="gateServiceId"
         type="text"
         placeholder="Filter by Gate Service Id"
-        class="w-100 h-100"
+        class="w-100 h-100 py-2"
         @keyup="filterElements"
         :class="{
           'border border-danger': !this.isServiceNameValid,
@@ -19,17 +19,17 @@
         Please enter correct input
       </p>
     </CCol>
-    <CCol class="col-md-4 col-12 m-auto py-2">
+    <CCol class="col-md-4 col-12 m-auto py-1">
       <CFormInput
         v-model="filterForm.Name"
         id="name"
         @keyup="filterElements"
         type="text"
         placeholder="Filter by Name"
-        class="w-100 h-100"
+        class="w-100 h-100 py-2"
       />
     </CCol>
-    <CCol class="col-md-4 col-12 m-auto py-2">
+    <CCol class="col-md-4 col-12 m-auto py-1">
       <VueMultiselect
         v-model="selectedGroup"
         :options="dbGroups.data"
@@ -468,7 +468,7 @@ export default {
   computed: {
     dynamicSearchQuery() {
       return (offset) =>
-        `${this.$store.state.testApi}/api/Services/GetServices?offset=${offset}${this.filteredIds}${this.filteredServiceName}${this.filteredGroup}&limit=${this.perPageElementCount}`
+        `${this.$store.state.testApi}/api/Services/GetServices?offset=${offset}${this.filteredIds}${this.filteredServiceName}${this.filteredGroup}&limit=${this.perPageElementCount}&sort=name`
     },
     filteredIds() {
       return this.filterForm.GateServiceId.length > 0
@@ -1131,6 +1131,12 @@ export default {
     //   },
     // })
     //   .then((response) => response.json)
+    //   .then((data) => console.log(data))
+
+    // fetch(
+    //   `${this.$store.state.testApi}/api/services/GetFilteredSimplifiedServices?servicename=a`,
+    // )
+    //   .then((response) => response.json())
     //   .then((data) => console.log(data))
   },
 }

@@ -8,6 +8,7 @@ export default createStore({
     prodApi: 'http://localhost:84',
     testApi: 'http://localhost:90',
     searchHistoryItemByPartition: '',
+    currentVendorCode: 1,
   },
   mutations: {
     toggleSidebar(state) {
@@ -21,6 +22,9 @@ export default createStore({
     },
     setSearchHistoryItemByPartition(state, data) {
       state.searchHistoryItemByPartition = data
+    },
+    setCurrentVendorCode(state, data) {
+      state.currentVendorCode = data
     },
   },
   actions: {

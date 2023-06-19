@@ -32,12 +32,25 @@
     <CHeaderDivider />
     <CContainer fluid>
       <AppBreadcrumb />
+      <div class="">
+        <switches
+          class="d-flex justify-content-center align-items-center gap-3"
+          theme="bulma"
+          color="green"
+          :textEnabled="'MPay'"
+          :textDisabled="'Modenis'"
+          :value="isMpay"
+          @trigger="changeTerminalTypeState"
+        />
+      </div>
     </CContainer>
   </CHeader>
 </template>
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
+
+import switches from '@/components/Switches.vue'
 import AppBreadcrumb from './AppBreadcrumb'
 import { logo } from '@/assets/brand/logo'
 //import router from '@/router'
@@ -45,9 +58,11 @@ export default {
   name: 'AppHeader',
   components: {
     AppBreadcrumb,
+    switches,
   },
-  setup() {
+  data() {
     return {
+      isMpay: true,
       logo,
     }
   },
@@ -67,6 +82,11 @@ export default {
     ...mapActions('auth', {
       userLogout: 'userLogout',
     }),
+    changeTerminalTypeState: function (value) {
+      this.isMpay = value
+      this.$store.commit('setCurrentVendorCode', this.isMpay ? 1 : 2)
+      console.log(this.$store.state.currentVendorCode)
+    },
     logOut: async function () {
       await this.userLogout()
       location.reload()
