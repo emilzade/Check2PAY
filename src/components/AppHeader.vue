@@ -85,7 +85,7 @@ export default {
     changeTerminalTypeState: function (value) {
       this.isMpay = value
       this.$store.commit('setCurrentVendorCode', this.isMpay ? 1 : 2)
-      console.log(this.$store.state.currentVendorCode)
+      //console.log(this.$store.state.currentVendorCode)
     },
     logOut: async function () {
       await this.userLogout()

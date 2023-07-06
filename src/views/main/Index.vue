@@ -248,8 +248,9 @@
   top: 15%;
   left: 25%;
   right: 25%;
-  bottom: 10%;
+  bottom: 15%;
   z-index: 9999;
+  border: 1px solid transparent;
   animation-name: boxEnter;
   animation-duration: 0.5s;
 }
@@ -258,8 +259,9 @@
   top: 10%;
   left: 125%;
   right: 25%;
-  bottom: 10%;
+  bottom: 15%;
   opacity: 0;
+  border: 31px solid transparent;
   animation-name: boxLeave;
   animation-duration: 0.5s;
 }
@@ -299,7 +301,7 @@ import {
   cilLockLocked,
   cilLockUnlocked,
 } from '@coreui/icons'
-
+import { mapGetters } from 'vuex'
 import Pagination from 'v-pagination-3'
 import CheckButtonsContainer from '@/components/CheckButtonsContainer.vue'
 import CheckAllConfirmModal from '@/components/CheckAllConfirmModal.vue'
@@ -467,6 +469,7 @@ export default {
   },
   computed: {
     dynamicSearchQuery() {
+      //add this line to search query ----    $vendorCode=${this.getCurrentVendorCode}
       return (offset) =>
         `${this.$store.state.testApi}/api/Services/GetServices?offset=${offset}${this.filteredIds}${this.filteredServiceName}${this.filteredGroup}&limit=${this.perPageElementCount}&sort=name`
     },
@@ -503,11 +506,22 @@ export default {
         return 0
       })
     },
+    ...mapGetters(['getCurrentVendorCode']),
     isSelectedTableDataEmpty: ({ selectedTableData }) =>
       selectedTableData.length === 0,
   },
+  watch: {
+    getCurrentVendorCode() {
+      this.getDbData(0)
+    },
+  },
   methods: {
     getDbData: function (offset) {
+      this.dbData = {
+        data: [],
+        totalCount: 0,
+      }
+      this.isPageLoading = true
       console.log(this.dynamicSearchQuery(offset))
       fetch(this.dynamicSearchQuery(offset), store.dispatch('fetchGetObject'))
         .then((response) => response.json())

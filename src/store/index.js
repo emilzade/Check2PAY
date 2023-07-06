@@ -10,6 +10,11 @@ export default createStore({
     searchHistoryItemByPartition: '',
     currentVendorCode: 1,
   },
+  getters: {
+    getCurrentVendorCode(state) {
+      return state.currentVendorCode
+    },
+  },
   mutations: {
     toggleSidebar(state) {
       state.sidebarVisible = !state.sidebarVisible

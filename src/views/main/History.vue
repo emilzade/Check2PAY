@@ -166,6 +166,8 @@ import CheckHistoryDetailedModal from '@/components/CheckHistoryDetailedModal.vu
 import CheckHistoryTable from '@/components/CheckHistoryTable.vue'
 import LoaderFullPage from '@/components/LoaderFullPage.vue'
 
+import { mapGetters } from 'vuex'
+
 import { computed } from 'vue'
 import { useStore } from 'vuex'
 
@@ -195,6 +197,7 @@ export default {
       dynamicData: computed(() => store.state.searchHistoryItemByPartition),
     }
   },
+
   data() {
     const dbData = {
       data: [],
@@ -285,6 +288,7 @@ export default {
   },
   computed: {
     dynamicSearchQuery() {
+      //add this line to search query ----    $vendorCode=${this.getCurrentVendorCode}
       return (offset) =>
         typeof this.dynamicData == 'object'
           ? `${this.$store.state.testApi}/api/CheckRequest/CheckRequestHistories?srv_name=${this.formData.srv_name}&serviceId=${this.formData.serviceId}&partitionNum=${this.dynamicData.partitionNumber}${this.selectedStatus}&from_date=${this.dynamicData.from_date}%2000%3A00&to_date=${this.dynamicData.to_date}%2000%3A00&limit=${this.perPageElementCount}&offset=${offset}`
@@ -299,6 +303,7 @@ export default {
       }
       return tempString
     },
+    ...mapGetters(['getCurrentVendorCode']),
     sortedSearchResults() {
       /*eslint-disable*/
       return this.dbData.data.sort((a, b) => {
@@ -310,12 +315,21 @@ export default {
       })
     },
   },
+  watch: {
+    getCurrentVendorCode() {
+      this.getDbData(0)
+    },
+  },
   methods: {
     search: function () {
       console.log(this.formData)
       this.getDbData(0)
     },
     getDbData: function (offset) {
+      this.dbData = {
+        data: [],
+        totalCount: 0,
+      }
       this.isPageLoading = true
       console.log(this.dynamicSearchQuery(offset))
       fetch(this.dynamicSearchQuery(offset))

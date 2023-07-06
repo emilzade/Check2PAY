@@ -3,10 +3,10 @@
     <CRow
       class="py-5 d-flex align-items-center justify-content-start w-75 m-auto"
     >
-      <CCol class="col-md-4 col-12 py-2">
-        <!-- <CFormLabel for="name" class="text-secondary bg-light">
-            Name
-          </CFormLabel> -->
+      <CCol class="col-md-3 col-6 py-2">
+        <CFormLabel for="userId" class="text-secondary bg-light">
+          User Id
+        </CFormLabel>
         <CFormInput
           id="userId"
           placeholder="User Id"
@@ -16,23 +16,10 @@
           class="input-custom border border-secondary rounded"
         />
       </CCol>
-      <CCol class="col-md-4 col-12 py-2">
-        <!-- <CFormLabel for="name" class="text-secondary bg-light">
-            Name
-          </CFormLabel> -->
-        <CFormInput
-          id="userId"
-          placeholder="User Id"
-          name="userId"
-          type="text"
-          v-model="formData.userId"
-          class="input-custom border border-secondary rounded"
-        />
-      </CCol>
-      <CCol class="col-md-4 col-12 py-2">
-        <!-- <CFormLabel for="partitionNumber" class="text-secondary bg-light">
-            Partition Number
-          </CFormLabel> -->
+      <CCol class="col-md-3 col-6 py-2">
+        <CFormLabel for="partitionNumber" class="text-secondary bg-light">
+          Partition Number
+        </CFormLabel>
         <CFormInput
           id="partitionId"
           type="text"
@@ -42,7 +29,7 @@
           class="input-custom border border-secondary rounded"
         />
       </CCol>
-      <CCol class="col-md-4 col-12 py-2"
+      <CCol class="col-md-3 col-6 py-2"
         ><CFormLabel for="startDate" class="text-secondary"
           >Start Date </CFormLabel
         ><CFormInput
@@ -53,7 +40,7 @@
           class="text-dark"
         />
       </CCol>
-      <CCol class="col-md-4 col-12 py-2"
+      <CCol class="col-md-3 col-6 py-2"
         ><CFormLabel for="endDate" class="text-secondary">End Date </CFormLabel
         ><CFormInput
           id="endDate"
@@ -184,7 +171,7 @@
 import JsonExcel from 'vue-json-excel3'
 import Pagination from 'v-pagination-3'
 import LoaderFullPage from '@/components/LoaderFullPage.vue'
-
+import { mapGetters } from 'vuex'
 import { ref } from 'vue'
 import {
   cilInfo,
@@ -274,12 +261,22 @@ export default {
       return (offset) =>
         `${this.$store.state.testApi}/api/Services/GetPartitionsCount?offset=${offset}&limit=${this.perPageElementCount}&partitionId=2&userId=${this.formData.userId}&startDate=${this.formData.from_date}%2000%3A00&endDate=${this.formData.to_date}%2000%3A00`
     },
+    ...mapGetters(['getCurrentVendorCode']),
+  },
+  watch: {
+    getCurrentVendorCode() {
+      this.getDbData(0)
+    },
   },
   methods: {
     search: function () {
       this.getDbData(0)
     },
     getDbData: function (offset) {
+      this.dbData = {
+        data: [],
+        totalCount: 0,
+      }
       this.isPageLoading = true
       console.log(this.formData)
       console.log(this.dynamicSearchQuery(offset))

@@ -93,7 +93,7 @@
                 <CIcon class="text-light" :content="icons.cilTrash"></CIcon>
               </div>
             </CCol>
-            <CCol class="col-12 d-flex justify-content-between">
+            <CCol class="col-12 d-flex justify-content-between px-3 mx-1">
               <CFormInput
                 @click="changeAddParameterActiveState"
                 value="Add"
@@ -108,8 +108,8 @@
               />
             </CCol>
             <CCol
-              v-if="isAddActive"
               class="col-12 my-2 d-flex justify-content-between align-items-end"
+              v-if="isAddActive"
             >
               <CFormLabel class="w-50 mx-2 text-secondary my-auto"
                 >Parameter name

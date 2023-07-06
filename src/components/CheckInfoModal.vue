@@ -16,7 +16,7 @@
         {{ item.serviceName }}
       </li>
       <li class="list-group-item break-word">
-        <span class="text-secondary">User Id:</span> 1
+        <span class="text-secondary">User Id:</span>
         {{ item.appUserId }}
       </li>
       <li class="list-group-item break-word">
